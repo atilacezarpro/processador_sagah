@@ -1,0 +1,14 @@
+// question: 0  name: Switch category to $course$/top/[01]
+$CATEGORY: $course$/top/[01]
+
+
+// question: 1  name: QUESTÃO [03] - [2]
+::QUESTÃO [03] - [2]::[html]<p dir\="ltr" style\="text-align\: justify;">[04]\:<br></p>{
+	[05]<p style\="text-align\: justify;"><span style\="font-size\: 0.9375rem;">[07]<br></p>
+	[09]<p style\="text-align\: justify;"><span style\="font-size\: 0.9375rem;">[11]<br></p>
+	[13]<p style\="text-align\: justify;"><span style\="font-size\: 0.9375rem;">[15]<br></p>
+	[17]<p style\="text-align\: justify;"><span style\="font-size\: 0.9375rem;">[19]<br></p>
+	[21]<p style\="text-align\: justify;"><span style\="font-size\: 0.9375rem;">[23]<br></p>
+}
+
+
