@@ -44,8 +44,8 @@ function processarArquivo(content) {
 
     // Iterar sobre cada linha e adicionar o shortcode numerado
     for (var i = 0; i < lines.length; i++) {
-        // Adicionar o shortcode numerado com dois dígitos (ex: [01], [02], ..., [10], [11], ...)
-        var shortcode = '[' + ('0' + (i + 1)).slice(-2) + ']';
+        // Adicionar o shortcode numerado com três dígitos (ex: [001], [002], ..., [010], [011], ..., [100])
+        var shortcode = '[' + ('00' + (i + 1)).slice(-3) + ']';
         processedContent += shortcode + ' ' + lines[i] + '\n';
     }
 
@@ -60,10 +60,10 @@ function processModelFile(originalFileName) {
         if (xhr.readyState === 4 && xhr.status === 200) {
             var modelContent = xhr.responseText;
             // Substitui os shortcodes no modelo pelo conteúdo processado
-            var processedModelContent = modelContent.replace(/\[\d{2}\]/g, function(match) {
-                var index = parseInt(match.slice(1, 3));
+            var processedModelContent = modelContent.replace(/\[\d{3}\]/g, function(match) {
+                var index = parseInt(match.slice(1, 4));
                 var lines = processedData.split('\n');
-                return lines[index - 1] ? lines[index - 1].slice(4) : match; // Remove o shortcode se a linha existir
+                return lines[index - 1] ? lines[index - 1].slice(5) : match; // Remove o shortcode se a linha existir
             });
             // Gera um novo documento com o texto processado
             baixarArquivo(processedModelContent, originalFileName);
