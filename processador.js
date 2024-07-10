@@ -1,4 +1,3 @@
-// Variável global para armazenar os dados processados temporariamente
 var processedData = '';
 
 document.getElementById('uploadBox').addEventListener('change', function(event) {
@@ -27,22 +26,20 @@ function processFile(file) {
     reader.onload = function(event) {
         var content = event.target.result;
         var originalFileName = file.name;
-        var processedContent = processarArquivo(content); // Função para processar o arquivo
-        processedData = processedContent; // Armazena os dados processados temporariamente
-        processModelFile(); // Processa o arquivo modelo
+        var processedContent = processarArquivo(content);
+        processedData = processedContent;
+        console.log('Processed Data:', processedData); // Debugging line
+        processModelFile();
     };
 
     reader.readAsText(file);
 }
 
 function processarArquivo(content) {
-    // Dividir o conteúdo do arquivo em linhas
     var lines = content.split('\n');
     var processedContent = '';
 
-    // Iterar sobre cada linha e adicionar o shortcode numerado
     for (var i = 0; i < lines.length; i++) {
-        // Adicionar o shortcode numerado com dois dígitos (ex: [01], [02], ..., [10], [11], ...)
         var shortcode = '[' + ('0' + (i + 1)).slice(-2) + ']';
         processedContent += shortcode + ' ' + lines[i] + '\n';
     }
@@ -51,18 +48,19 @@ function processarArquivo(content) {
 }
 
 function processModelFile() {
-    // Carrega o arquivo modelo
     var xhr = new XMLHttpRequest();
     xhr.open('GET', 'modelo.txt', true);
     xhr.onreadystatechange = function() {
         if (xhr.readyState === 4 && xhr.status === 200) {
             var modelContent = xhr.responseText;
-            // Substitui os shortcodes no modelo pelo conteúdo processado
+            console.log('Model Content:', modelContent); // Debugging line
             var processedModelContent = modelContent.replace(/\[\d{2}\]/g, function(match) {
                 var index = parseInt(match.slice(1, 3));
-                return processedData.split('\n')[index - 1].slice(4); // Remove o shortcode
+                var lines = processedData.split('\n');
+                console.log('Index:', index, 'Line:', lines[index - 1]); // Debugging line
+                return lines[index - 1] ? lines[index - 1].slice(4) : match;
             });
-            // Gera um novo documento com o texto processado
+            console.log('Processed Model Content:', processedModelContent); // Debugging line
             baixarArquivo(processedModelContent, 'documento_processado.txt');
         }
     };
@@ -72,11 +70,9 @@ function processModelFile() {
 function baixarArquivo(content, filename) {
     var blob = new Blob([content], { type: 'text/plain' });
 
-    // Cria um link para download do arquivo
     var link = document.createElement('a');
     link.href = window.URL.createObjectURL(blob);
     link.download = filename;
 
-    // Simula um clique no link para iniciar o download
     link.click();
 }
