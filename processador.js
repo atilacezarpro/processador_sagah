@@ -54,7 +54,7 @@ function processarArquivo(content) {
     for (var i = 0; i < lines.length; i++) {
         // Adicionar o shortcode numerado com três dígitos (ex: [001], [002], ..., [010], [011], ..., [100])
         var shortcode = '[' + ('00' + (i + 1)).slice(-3) + ']';
-        processedContent += shortcode + ' ' + lines[i] + '\n';
+        processedContent += shortcode + lines[i] + '\n'; // Removido o espaço entre shortcode e linha
     }
 
     return processedContent;
