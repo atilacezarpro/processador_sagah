@@ -3,18 +3,24 @@ var processedData = [];
 
 document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('processButton').addEventListener('click', function(event) {
+        var trailName = document.getElementById('trailName').value.trim();
+        if (!trailName) {
+            alert('Por favor, insira o nome da trilha.');
+            return;
+        }
+
         var fileInput = document.getElementById('fileInput');
         var files = fileInput.files;
 
         if (files.length > 0) {
-            processFiles(files);
+            processFiles(files, trailName);
         } else {
             alert('Por favor, selecione um arquivo para enviar.');
         }
     });
 });
 
-function processFiles(files) {
+function processFiles(files, trailName) {
     processedData = []; // Limpa os dados processados anteriores
     var filesProcessed = 0;
 
@@ -30,7 +36,7 @@ function processFiles(files) {
 
                 filesProcessed++;
                 if (filesProcessed === files.length) {
-                    processModelFiles();
+                    processModelFiles(trailName);
                 }
             };
         })(file);
@@ -54,7 +60,7 @@ function processarArquivo(content) {
     return processedContent;
 }
 
-function processModelFiles() {
+function processModelFiles(trailName) {
     // Carrega o arquivo modelo
     var xhr = new XMLHttpRequest();
     xhr.open('GET', 'modelo.txt', true);
@@ -74,7 +80,8 @@ function processModelFiles() {
             }
 
             // Gera um novo documento com o texto processado
-            baixarArquivo(finalContent, 'arquivos_processados.txt');
+            var fileName = 'trilha_' + trailName + '.txt';
+            baixarArquivo(finalContent, fileName);
         }
     };
     xhr.send();
