@@ -1,24 +1,26 @@
 // Variável global para armazenar os dados processados temporariamente
 var processedData = '';
 
-document.getElementById('uploadBox').addEventListener('change', function(event) {
-    var fileInput = document.getElementById('fileInput');
-    var files = fileInput.files;
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('uploadBox').addEventListener('change', function(event) {
+        var fileInput = document.getElementById('fileInput');
+        var files = fileInput.files;
 
-    if (files.length > 0) {
-        processFile(files[0]);
-    }
-});
+        if (files.length > 0) {
+            processFile(files[0]);
+        }
+    });
 
-document.getElementById('processButton').addEventListener('click', function(event) {
-    var fileInput = document.getElementById('fileInput');
-    var files = fileInput.files;
+    document.getElementById('processButton').addEventListener('click', function(event) {
+        var fileInput = document.getElementById('fileInput');
+        var files = fileInput.files;
 
-    if (files.length > 0) {
-        processFile(files[0]);
-    } else {
-        alert('Por favor, selecione um arquivo para enviar.');
-    }
+        if (files.length > 0) {
+            processFile(files[0]);
+        } else {
+            alert('Por favor, selecione um arquivo para enviar.');
+        }
+    });
 });
 
 function processFile(file) {
@@ -29,7 +31,7 @@ function processFile(file) {
         var originalFileName = file.name;
         var processedContent = processarArquivo(content); // Função para processar o arquivo
         processedData = processedContent; // Armazena os dados processados temporariamente
-        processModelFile(); // Processa o arquivo modelo
+        processModelFile(originalFileName); // Processa o arquivo modelo
     };
 
     reader.readAsText(file);
@@ -50,7 +52,7 @@ function processarArquivo(content) {
     return processedContent;
 }
 
-function processModelFile() {
+function processModelFile(originalFileName) {
     // Carrega o arquivo modelo
     var xhr = new XMLHttpRequest();
     xhr.open('GET', 'modelo.txt', true);
@@ -68,19 +70,23 @@ function processModelFile() {
                 }
             });
             // Gera um novo documento com o texto processado
-            baixarArquivo(processedModelContent, 'documento_processado.txt');
+            baixarArquivo(processedModelContent, originalFileName);
         }
     };
     xhr.send();
 }
 
-function baixarArquivo(content, filename) {
+function baixarArquivo(content, originalFileName) {
     var blob = new Blob([content], { type: 'text/plain' });
+    
+    // Adiciona o sufixo _processado ao nome do arquivo original
+    var filenameParts = originalFileName.split('.');
+    var newFileName = filenameParts.slice(0, -1).join('.') + '_processado.' + filenameParts.slice(-1);
 
     // Cria um link para download do arquivo
     var link = document.createElement('a');
     link.href = window.URL.createObjectURL(blob);
-    link.download = filename;
+    link.download = newFileName;
 
     // Simula um clique no link para iniciar o download
     link.click();
