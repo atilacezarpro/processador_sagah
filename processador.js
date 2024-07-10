@@ -63,11 +63,7 @@ function processModelFile(originalFileName) {
             var processedModelContent = modelContent.replace(/\[\d{2}\]/g, function(match) {
                 var index = parseInt(match.slice(1, 3));
                 var lines = processedData.split('\n');
-                if (index - 1 < lines.length) {
-                    return lines[index - 1].slice(4); // Remove o shortcode se a linha existir
-                } else {
-                    return match; // Mantém o shortcode se a linha não existir
-                }
+                return lines[index - 1] ? lines[index - 1].slice(4) : match; // Remove o shortcode se a linha existir
             });
             // Gera um novo documento com o texto processado
             baixarArquivo(processedModelContent, originalFileName);
