@@ -102,6 +102,13 @@
         <button id="processButton">Processar Arquivos</button>
     </div>
 
-    <script src="processador.js"></script>
+    <script>
+        document.getElementById('trailName').addEventListener('input', function () {
+            var input = this.value;
+            if (input.length > 2) {
+                this.value = input.slice(0, 2);
+            }
+        });
+    </script>
 </body>
 </html>
