@@ -48,25 +48,25 @@ document.addEventListener('DOMContentLoaded', function() {
         return processedContent;
     }
 
-    function processModelFile(originalFileName) {
-        var xhr = new XMLHttpRequest();
-        xhr.open('GET', 'modelo.txt', true);
-        xhr.onreadystatechange = function() {
-            if (xhr.readyState === 4 && xhr.status === 200) {
-                var modelContent = xhr.responseText;
-                console.log('Model Content:', modelContent); // Linha de depuração
-                var processedModelContent = modelContent.replace(/\[\d{2}\]/g, function(match) {
-                    var index = parseInt(match.slice(1, 3));
-                    var lines = processedData.split('\n');
-                    console.log('Index:', index, 'Line:', lines[index - 1]); // Linha de depuração
-                    return lines[index - 1] ? lines[index - 1].slice(4) : match;
-                });
-                console.log('Processed Model Content:', processedModelContent); // Linha de depuração
-                baixarArquivo(processedModelContent, originalFileName);
-            }
-        };
-        xhr.send();
-    }
+    function processModelFile() {
+    // Carrega o arquivo modelo
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', 'modelo.txt', true);
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4 && xhr.status === 200) {
+            var modelContent = xhr.responseText;
+            // Substitui os shortcodes no modelo pelo conteúdo processado
+            var processedModelContent = modelContent.replace(/\[\d{2}\]/g, function(match) {
+                var index = parseInt(match.slice(1, 3));
+                var line = processedData.split('\n')[index - 1];
+                return line ? line.slice(4) : match; // Remove o shortcode se a linha existir
+            });
+            // Gera um novo documento com o texto processado
+            baixarArquivo(processedModelContent, 'documento_processado.txt');
+        }
+    };
+    xhr.send();
+}
 
     function baixarArquivo(content, originalFileName) {
         var blob = new Blob([content], { type: 'text/plain' });
