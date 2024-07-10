@@ -71,10 +71,10 @@ function processModelFiles(trailName) {
 
             // Substitui os shortcodes no modelo pelo conteúdo processado
             for (var i = 0; i < processedData.length; i++) {
+                var lines = processedData[i].split('\n');
                 var processedModelContent = modelContent.replace(/\[\d{3}\]/g, function(match) {
                     var index = parseInt(match.slice(1, 4));
-                    var lines = processedData[i].split('\n');
-                    return lines[index - 1] ? lines[index - 1].slice(5) : match; // Remove o shortcode se a linha existir
+                    return lines[index - 1] ? lines[index - 1].slice(5).trim() : match; // Remove o shortcode se a linha existir e remove espaços extras
                 });
                 finalContent += processedModelContent + '\n';
             }
