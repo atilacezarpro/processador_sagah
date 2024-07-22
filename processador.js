@@ -5,7 +5,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('processButton').addEventListener('click', function(event) {
         var trailName = document.getElementById('trailName').value.trim();
         if (!trailName) {
-            alert('Por favor, insira o nome da trilha.');
+            alert('Por favor, insira o número da trilha.');
             return;
         }
 
