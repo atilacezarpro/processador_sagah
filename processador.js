@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (files.length > 0) {
             processFiles(files, trailName);
         } else {
-            alert('Por favor, selecione um arquivo para enviar.');
+            alert('Por favor, selecione um ou mais arquivo(s) para enviar.');
         }
     });
 });
