@@ -51,4 +51,3 @@ $CATEGORY: $course$/top/[001]
 	[125]<p style\="text-align\: justify;"><span style\="font-size\: 0.9375rem;">[127]<br></p>
 }
 
-
