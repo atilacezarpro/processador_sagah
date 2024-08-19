@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<title>Editor de Questões</title>
+<link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+<script src="https://cdn.tiny.cloud/1/wngoh8cdfbnclgn1ulvujvsb6dj9l76xarp1im1r3wt2zhh9/tinymce/5/tinymce.min.js" referrerpolicy="origin"></script>
+<style>
+  .tox .tox-notification--warn, .tox .tox-notification--error { display: none !important; }
+  .modal-lg { max-width: 90%; }
+  .correct { background-color: lightgreen; }
+  .incorrect { background-color: lightcoral; }
+  .feedback { margin-left: 30px; background-color: #f0f0f0; padding: 10px; border-radius: 5px; }
+  .feedback-editor { background-color: #f5f5f5; }
+</style>
+</head>
+<body>
+<div class="container mt-3">
+  <h2>Editor de Questões</h2>
+  <input type="file" id="fileInput" accept=".txt" class="form-control mb-3">
+  <div id="trailContainer">
+    <!-- Trilhas e questões serão adicionadas aqui -->
+  </div>
+  <button id="downloadChanges" class="btn btn-success mt-3">Download Alterações</button>
+<br>
+</div>
+
+<!-- Modal para edição de questões -->
+<div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true" data-backdrop="static">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="editModalLabel">Editar Questão</h5>
+        <button type="button" class="close" id="modalClose" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form id="editForm">
+          <div class="form-group">
+            <label for="questionName">Nome da Questão:</label>
+            <input type="text" id="questionName" class="form-control">
+          </div>
+          <div class="form-group">
+            <label for="questionText">Enunciado:</label>
+            <textarea id="questionText" class="form-control"></textarea>
+          </div>
+          <div id="alternativesContainer" class="form-group">
+            <!-- Alternativas serão adicionadas dinamicamente -->
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="cancelChanges">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="saveChanges">Salvar Alterações</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+<script>
+let questionsData = []; // Armazena as questões globalmente
+let originalFileContent = ""; // Armazena o conteúdo original do arquivo
+let isModified = false; // Flag para monitorar se o conteúdo foi modificado
+
+$(document).ready(function() {
+  $('#fileInput').on('change', function(event) {
+    const file = event.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        originalFileContent = e.target.result; // Salva o conteúdo original
+        const questions = originalFileContent.split('// question:').slice(1);
+
+        // Processa as questões
+        questionsData = questions.map((questionText, index) => {
+          if (questionText.includes('Switch category to $course$/top/')) return null;
+
+          const nameMatch = questionText.match(/name: (.+?)\n/);
+          let htmlMatch = questionText.match(/\[html\](.+?)\{/s);
+          
+          // Corrigir \n e escapamentos de caracteres
+          if (htmlMatch) {
+            htmlMatch = htmlMatch[1].replace(/\\:/g, ":").replace(/\\n/g, "<br>");
+          }
+
+          const alternatives = extractAlternatives(questionText);
+
+          const questionName = nameMatch ? nameMatch[1].trim() : '';
+          const unitMatch = questionName.match(/Q_\d{2}_(UN|U)_(\d{2})/); // Identifica unidade
+
+          if (unitMatch) {
+            const unitNumber = parseInt(unitMatch[2], 10); // Pega número da unidade
+            const trailNumber = Math.ceil(unitNumber / 5);  // Divide em trilhas (1 a 5 = trilha 1, etc.)
+            const trail = `Trilha ${trailNumber}`;
+
+            return {
+              id: index + 1,
+              name: questionName,
+              trail: trail,
+              originalText: questionText, // Armazena o texto original da questão
+              html: htmlMatch ? htmlMatch.trim() : '',
+              alternatives: alternatives
+            };
+          }
+          return null;
+        }).filter(Boolean);
+
+        renderQuestions();
+      };
+      reader.readAsText(file);
+    }
+  });
+
+  function renderQuestions() {
+    const trailContainer = $('#trailContainer');
+    trailContainer.empty();
+
+    // Agrupar questões por trilha
+    const groupedByTrail = questionsData.reduce((acc, question) => {
+      const trail = question.trail;
+      acc[trail] = acc[trail] || [];
+      acc[trail].push(question);
+      return acc;
+    }, {});
+
+    // Renderizar cada trilha e suas questões
+    Object.keys(groupedByTrail).forEach(trail => {
+      const trailDiv = $('<div>').addClass('trail').append(`<h3>${trail}</h3>`);
+      const table = $('<table>').addClass('table table-bordered');
+      const tableHead = $('<thead><tr><th>Questão</th><th>Enunciado</th><th>Ações</th></tr></thead>');
+      const tableBody = $('<tbody></tbody>');
+
+      groupedByTrail[trail].forEach((question) => {
+        const row = $('<tr>');
+        const nameCell = $('<td>').text(question.name);
+        const htmlCell = $('<td>').html(question.html.substring(0, 100) + '...');
+        const editButton = $('<button>').addClass('btn btn-primary').text('Editar').data('question-id', question.id);
+
+        editButton.on('click', function() {
+          const questionId = $(this).data('question-id');
+          loadQuestionModal(questionId);
+          $('#editModal').modal('show'); // Abrir modal corretamente
+        });
+
+        const actionsCell = $('<td>').append(editButton);
+        row.append(nameCell, htmlCell, actionsCell);
+        tableBody.append(row);
+      });
+
+      table.append(tableHead).append(tableBody);
+      trailDiv.append(table);
+      trailContainer.append(trailDiv);
+    });
+  }
+
+  function extractAlternatives(questionText) {
+    const regex = /([~=])([^\n#]+)#([^\n]*)/g;
+    let match;
+    const alternatives = [];
+    while ((match = regex.exec(questionText)) !== null) {
+      alternatives.push({
+        isCorrect: match[1] === '=',
+        text: match[2].trim(),
+        feedback: match[3].trim()
+      });
+    }
+    return alternatives;
+  }
+
+  function loadQuestionModal(questionId) {
+    isModified = false; // Reiniciar flag de modificação
+    const question = questionsData.find(q => q.id === questionId);
+    $('#editForm').data('question-id', question.id); // Salvar o id da questão no formulário
+    $('#questionName').val(question.name);
+
+    tinymce.init({
+      selector: '#questionText',
+      height: 300,
+      menubar: false,
+      plugins: ['advlist autolink lists link image charmap print preview anchor',
+                'searchreplace visualblocks code fullscreen',
+                'insertdatetime media table paste code help wordcount image code'],
+      toolbar: 'undo redo | formatselect | bold italic backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | image | code',
+      automatic_uploads: false, // Desativar o upload de arquivos, já que você quer carregar imagens externas
+      image_advtab: true, // Ativa opções avançadas para imagens
+      images_upload_credentials: true, // Permite URLs de imagens externas
+      relative_urls: false, // Mantém URLs absolutas para imagens
+      extended_valid_elements: 'img[src|alt|width|height|class|role]', // Permitir atributos de imagem no HTML
+      setup: function(editor) {
+        editor.on('init', function() {
+          tinymce.get('questionText').setContent(question.html);
+        });
+        editor.on('change', function() {
+          isModified = true; // Indicar que o conteúdo foi modificado
+        });
+      }
+    });
+
+    const container = $('#alternativesContainer');
+    container.empty();
+
+    question.alternatives.forEach((alt, index) => {
+      const altHtml = $('<textarea>').addClass('form-control my-2 question-editor').val(alt.text);
+      const feedbackHtml = $('<textarea>').addClass('form-control my-2 feedback-editor feedback').val(alt.feedback);
+
+      const label = $('<label>').text(`Alternativa ${index + 1}`);
+      const feedbackLabel = $('<label>').text(`Feedback - Alternativa ${index + 1}`);
+      const selectHtml = $('<select>').addClass('form-control mb-2')
+        .html(`<option value="false"${!alt.isCorrect ? ' selected' : ''}>Incorreta</option>
+               <option value="true"${alt.isCorrect ? ' selected' : ''}>Correta</option>`)
+        .addClass(alt.isCorrect ? 'correct' : 'incorrect');
+
+      const div = $('<div>').addClass('form-group').append(label, selectHtml, altHtml, feedbackLabel, feedbackHtml);
+      container.append(div);
+    });
+
+    setTimeout(() => {
+      tinymce.init({
+        selector: '.question-editor',
+        height: 150,
+        menubar: false,
+        plugins: ['advlist autolink lists link image charmap print preview anchor',
+                  'searchreplace visualblocks code fullscreen',
+                  'insertdatetime media table paste code help wordcount image code'],
+        toolbar: 'undo redo | formatselect | bold italic backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | image | code',
+      });
+      tinymce.init({
+        selector: '.feedback-editor',
+        height: 150,
+        menubar: false,
+        plugins: ['advlist autolink lists link image charmap print preview anchor',
+                  'searchreplace visualblocks code fullscreen',
+                  'insertdatetime media table paste code help wordcount image code'],
+        toolbar: 'undo redo | formatselect | bold italic backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | image | code',
+      });
+    }, 100);
+  }
+
+  $('#saveChanges').on('click', function() {
+    const questionId = $('#editForm').data('question-id');
+    const question = questionsData.find(q => q.id === questionId);
+    question.name = $('#questionName').val();
+    question.html = tinymce.get('questionText').getContent();
+
+    $('#alternativesContainer .form-group').each(function(index) {
+      const altText = $(this).find('.question-editor').val();
+      const feedbackText = $(this).find('.feedback-editor').val();
+      const isCorrect = $(this).find('select').val() === 'true';
+      question.alternatives[index].text = altText;
+      question.alternatives[index].feedback = feedbackText;
+      question.alternatives[index].isCorrect = isCorrect;
+    });
+
+    // Salva as alterações e fecha o modal
+    renderQuestions();
+    $('#editModal').modal('hide');
+    isModified = false; // Reiniciar flag de modificação após salvar
+  });
+
+  // Adicionar aviso antes de fechar modal sem salvar
+  $('#modalClose, #cancelChanges').on('click', function() {
+    if (isModified) {
+      if (confirm("Você tem alterações não salvas. Deseja realmente sair sem salvar?")) {
+        $('#editModal').modal('hide');
+      }
+    } else {
+      $('#editModal').modal('hide');
+    }
+  });
+
+  $('#editModal').on('hide.bs.modal', function () {
+    tinymce.remove('.question-editor');
+    tinymce.remove('#questionText');
+  });
+
+  // Baixar as alterações feitas em um arquivo
+  $('#downloadChanges').on('click', function() {
+    let updatedContent = originalFileContent; // Começa com o conteúdo original
+
+    questionsData.forEach(question => {
+      const questionText = question.originalText;
+      const updatedHtml = question.html;
+      const updatedAlternatives = question.alternatives.map(alt => {
+        const correctSymbol = alt.isCorrect ? '=' : '~';
+        return `${correctSymbol}${alt.text}#${alt.feedback}`;
+      }).join('\n');
+
+      // Substituir conteúdo HTML e alternativas atualizadas
+      updatedContent = updatedContent.replace(questionText, `name: ${question.name}\n[html]${updatedHtml}{\n${updatedAlternatives}\n}`);
+    });
+
+    const blob = new Blob([updatedContent], { type: 'text/plain' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'questoes_alteradas.txt';
+    link.click();
+  });
+});
+</script>
+</body>
+</html>
