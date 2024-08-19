@@ -206,14 +206,12 @@ $(document).ready(function() {
       const nameMatch = questionText.match(/name: (.+?)\n/);
       let htmlMatch = questionText.match(/\[html\](.+?)\{/s);
       
-      // Corrigir \n e escapamentos de caracteres \\
+      // Remover todas as barras invertidas no HTML
       if (htmlMatch) {
-        htmlMatch = htmlMatch[1]
-          .replace(/\\:/g, ":") // Substitui \: por :
-          .replace(/\\n/g, "<br>") // Substitui \n por <br> para criar quebras de linha
-          .replace(/\\\\/g, "\\"); // Substitui \\ por \ para corrigir a barra invertida
+        htmlMatch = htmlMatch[1].replace(/\\/g, "");  // Remove todas as barras invertidas
       }
 
+      // Extrair alternativas e feedbacks
       const alternatives = extractAlternatives(questionText);
 
       const questionName = nameMatch ? nameMatch[1].trim() : '';
@@ -237,7 +235,9 @@ $(document).ready(function() {
     }).filter(Boolean);
 
     renderQuestions();
-  }
+}
+
+
 
   function renderQuestions() {
     const trailContainer = $('#trailContainer');
@@ -284,14 +284,18 @@ $(document).ready(function() {
     let match;
     const alternatives = [];
     while ((match = regex.exec(questionText)) !== null) {
+      // Remover barras invertidas das alternativas e feedbacks
+      const text = match[2].replace(/\\/g, "").trim();
+      const feedback = match[3].replace(/\\/g, "").trim();
+
       alternatives.push({
         isCorrect: match[1] === '=',
-        text: match[2].trim(),
-        feedback: match[3].trim()
+        text: text,
+        feedback: feedback
       });
     }
     return alternatives;
-  }
+}
 
   function loadQuestionModal(questionId) {
     isModified = false;
@@ -300,26 +304,37 @@ $(document).ready(function() {
     $('#questionName').val(question.name);
 
     tinymce.init({
-      selector: '#questionText',
-      height: 300,
-      menubar: false,
-      plugins: ['advlist autolink lists link image charmap print preview anchor',
-                'searchreplace visualblocks code fullscreen',
-                'insertdatetime media table paste code help wordcount image code'],
-      toolbar: 'undo redo | formatselect | bold italic backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | image | code',
-      automatic_uploads: false,
-      image_advtab: true,
-      images_upload_credentials: true,
-      relative_urls: false,
-      extended_valid_elements: 'img[src|alt|width|height|class|role]',
-      setup: function(editor) {
-        editor.on('init', function() {
-          tinymce.get('questionText').setContent(question.html);
-        });
-        editor.on('change', function() {
-          isModified = true;
-        });
-      }
+        selector: '#questionText',
+        height: 300,
+        menubar: false,
+        plugins: [
+            'advlist autolink lists link image charmap print preview anchor',
+            'searchreplace visualblocks code fullscreen',
+            'insertdatetime media table paste code help wordcount',
+            'image code'  // Habilitar edição de código e imagens
+        ],
+        toolbar: 'undo redo | formatselect | bold italic backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | image | code',  // Adicionar os botões 'image' e 'code'
+        automatic_uploads: false,
+        image_advtab: true,
+        images_upload_credentials: true,
+        relative_urls: false,
+        extended_valid_elements: 'img[src|alt|width|height|class|role]',
+        file_picker_callback: function(callback, value, meta) {
+            if (meta.filetype === 'image') {
+                let imageUrl = prompt('Enter the URL of the image');
+                if (imageUrl) {
+                    callback(imageUrl, {alt: 'Image description'});
+                }
+            }
+        },
+        setup: function(editor) {
+            editor.on('init', function() {
+                tinymce.get('questionText').setContent(question.html);
+            });
+            editor.on('change', function() {
+                isModified = true;
+            });
+        }
     });
 
     const container = $('#alternativesContainer');
@@ -345,19 +360,51 @@ $(document).ready(function() {
         selector: '.question-editor',
         height: 150,
         menubar: false,
-        plugins: ['advlist autolink lists link image charmap print preview anchor',
-                  'searchreplace visualblocks code fullscreen',
-                  'insertdatetime media table paste code help wordcount image code'],
-        toolbar: 'undo redo | formatselect | bold italic backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | image | code',
+        plugins: [
+            'advlist autolink lists link image charmap print preview anchor',
+            'searchreplace visualblocks code fullscreen',
+            'insertdatetime media table paste code help wordcount',
+            'image code'  // Adicionar suporte a edição de código e imagens
+        ],
+        toolbar: 'undo redo | formatselect | bold italic backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | image | code',  // Incluir botões 'image' e 'code'
+        automatic_uploads: false,
+        image_advtab: true,
+        images_upload_credentials: true,
+        relative_urls: false,
+        extended_valid_elements: 'img[src|alt|width|height|class|role]',
+        file_picker_callback: function(callback, value, meta) {
+            if (meta.filetype === 'image') {
+                let imageUrl = prompt('Enter the URL of the image');
+                if (imageUrl) {
+                    callback(imageUrl, {alt: 'Image description'});
+                }
+            }
+        }
       });
       tinymce.init({
         selector: '.feedback-editor',
         height: 150,
         menubar: false,
-        plugins: ['advlist autolink lists link image charmap print preview anchor',
-                  'searchreplace visualblocks code fullscreen',
-                  'insertdatetime media table paste code help wordcount image code'],
-        toolbar: 'undo redo | formatselect | bold italic backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | image | code',
+        plugins: [
+            'advlist autolink lists link image charmap print preview anchor',
+            'searchreplace visualblocks code fullscreen',
+            'insertdatetime media table paste code help wordcount',
+            'image code'  // Adicionar suporte a edição de código e imagens
+        ],
+        toolbar: 'undo redo | formatselect | bold italic backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | image | code',  // Incluir botões 'image' e 'code'
+        automatic_uploads: false,
+        image_advtab: true,
+        images_upload_credentials: true,
+        relative_urls: false,
+        extended_valid_elements: 'img[src|alt|width|height|class|role]',
+        file_picker_callback: function(callback, value, meta) {
+            if (meta.filetype === 'image') {
+                let imageUrl = prompt('Enter the URL of the image');
+                if (imageUrl) {
+                    callback(imageUrl, {alt: 'Image description'});
+                }
+            }
+        }
       });
     }, 100);
   }
