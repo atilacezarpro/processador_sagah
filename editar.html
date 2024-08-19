@@ -206,9 +206,12 @@ $(document).ready(function() {
       const nameMatch = questionText.match(/name: (.+?)\n/);
       let htmlMatch = questionText.match(/\[html\](.+?)\{/s);
       
-      // Corrigir \n e escapamentos de caracteres
+      // Corrigir \n e escapamentos de caracteres \\
       if (htmlMatch) {
-        htmlMatch = htmlMatch[1].replace(/\\:/g, ":").replace(/\\n/g, "<br>");
+        htmlMatch = htmlMatch[1]
+          .replace(/\\:/g, ":") // Substitui \: por :
+          .replace(/\\n/g, "<br>") // Substitui \n por <br> para criar quebras de linha
+          .replace(/\\\\/g, "\\"); // Substitui \\ por \ para corrigir a barra invertida
       }
 
       const alternatives = extractAlternatives(questionText);
@@ -398,16 +401,27 @@ $(document).ready(function() {
     let updatedContent = originalFileContent;
 
     questionsData.forEach(question => {
-      const questionText = question.originalText;
-      const updatedHtml = question.html;
-      const updatedAlternatives = question.alternatives.map(alt => {
-        const correctSymbol = alt.isCorrect ? '=' : '~';
-        return `${correctSymbol}${alt.text}#${alt.feedback}`;
-      }).join('\n');
+        const questionText = question.originalText;
+        const updatedHtml = question.html;
+        
+        // Formatar alternativas corretamente
+        const updatedAlternatives = question.alternatives.map(alt => {
+            const correctSymbol = alt.isCorrect ? '=' : '~'; // GIFT format for correct/incorrect
+            return `${correctSymbol}${alt.text}#${alt.feedback}`; // Format alternatives with feedback
+        }).join('\n');
+        
+        // Substituição correta das alternativas no texto original
+        const regexAlternatives = /([~=])([^\n#]+)#([^\n]*)/g;
+        let alternativeIndex = 0;
 
-      updatedContent = updatedContent.replace(questionText, `name: ${question.name}\n[html]${updatedHtml}{\n${updatedAlternatives}\n}`);
+        // Substituir conteúdo antigo por atualizado
+        updatedContent = updatedContent.replace(questionText, questionText.replace(/\[html\](.+?)\{/, `[html]${updatedHtml}{`).replace(regexAlternatives, function(match, p1, p2, p3) {
+            const updatedAlt = updatedAlternatives.split('\n')[alternativeIndex++];
+            return updatedAlt ? updatedAlt : match;
+        }));
     });
 
+    // Gerar o arquivo para download
     const blob = new Blob([updatedContent], { type: 'text/plain' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
@@ -415,6 +429,7 @@ $(document).ready(function() {
     link.click();
   });
 });
+
 </script>
 </body>
 </html>
