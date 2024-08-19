@@ -3,9 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Processador de Questões</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <title>Processador e Editor de Questões</title>
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdn.tiny.cloud/1/wngoh8cdfbnclgn1ulvujvsb6dj9l76xarp1im1r3wt2zhh9/tinymce/5/tinymce.min.js" referrerpolicy="origin"></script>
     <style>
         body {
             background-color: #f9f9f9;
@@ -17,7 +18,7 @@
             margin: 0;
         }
 
-        #uploadBox {
+        #uploadBox, #editorBox {
             background-color: #fff;
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -25,43 +26,17 @@
             text-align: center;
             max-width: 400px;
             width: 100%;
+            display: none;
         }
 
-        #uploadBox h2 {
+        h2 {
             color: #333;
             font-size: 24px;
             font-weight: bold;
             margin-bottom: 30px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
         }
 
-        #uploadIcon {
-            font-size: 36px;
-            margin-right: 10px;
-            color: #2196F3;
-        }
-
-        #fileLabel {
-            background-color: #2196F3;
-            border: none;
-            border-radius: 4px;
-            color: #fff;
-            cursor: pointer;
-            font-size: 16px;
-            padding: 10px 20px;
-            transition: background-color 0.3s ease;
-            display: block;
-            margin: 0 auto 20px;
-            width: fit-content;
-        }
-
-        #fileLabel:hover {
-            background-color: #1976D2;
-        }
-
-        #processButton {
+        .button {
             background-color: #4CAF50;
             border: none;
             border-radius: 4px;
@@ -69,40 +44,132 @@
             cursor: pointer;
             font-size: 16px;
             padding: 10px 20px;
-            transition: background-color 0.3s ease;
+            margin-top: 20px;
             display: block;
             margin: 0 auto;
-            width: fit-content;
         }
 
-        #processButton:hover {
+        .button:hover {
             background-color: #388E3C;
         }
 
-        #uploadBox input[type="file"] {
-            display: none;
-        }
-
-        #trailName {
-            width: 100%;
-            padding: 10px;
-            margin-bottom: 20px;
-            font-size: 16px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
+        .container {
+            margin-top: 20px;
         }
     </style>
 </head>
 <body>
+    <!-- Caixa de Upload -->
     <div id="uploadBox">
         <h2>Processador de Questões</h2>
-        <input type="text" id="trailName" minlength="1" maxlength="1" placeholder="Trilha (x)">
-        <label id="fileLabel" for="fileInput">Selecione os arquivos</label>
-        <input type="file" id="fileInput" accept=".txt" multiple>
-        <button id="processButton">Processar Arquivos</button>
-        <p>Licença paga para <b>NEaD UNIVAR</b> até <i>31/12/2024</i></p>
+        <input type="text" id="trailName" placeholder="Trilha (x)">
+        <label class="button" for="fileInput">Selecione os arquivos</label>
+        <input type="file" id="fileInput" accept=".txt" multiple style="display:none;">
+        <button id="processButton" class="button">Processar Arquivos</button>
     </div>
 
-    <script src="processador.js"></script>
+    <!-- Caixa do Editor -->
+    <div id="editorBox">
+        <h2>Editor de Questões</h2>
+        <div id="trailContainer" class="container">
+            <!-- Trilhas e questões serão adicionadas aqui -->
+        </div>
+        <button id="downloadChanges" class="button">Download Alterações</button>
+    </div>
+
+    <script>
+        let processedData = [];
+        let modeloTxt = '';
+
+        $(document).ready(function () {
+            // Carrega o modelo.txt via AJAX
+            $.get('modelo.txt', function(data) {
+                modeloTxt = data;  // Armazena o modelo.txt carregado
+            });
+
+            // Exibir caixa de upload no início
+            $('#uploadBox').show();
+
+            $('#processButton').on('click', function () {
+                const fileInput = $('#fileInput')[0].files;
+                const trailName = $('#trailName').val().trim();
+
+                if (!trailName || fileInput.length === 0) {
+                    alert('Por favor, insira a trilha e selecione um arquivo.');
+                    return;
+                }
+
+                // Processa os arquivos selecionados
+                processFiles(fileInput, trailName);
+            });
+
+            $('#downloadChanges').on('click', function () {
+                // Lógica para gerar o arquivo editado para download
+                generateDownload();
+            });
+        });
+
+        function processFiles(files, trailName) {
+            processedData = [];
+            let filesProcessed = 0;
+
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                const reader = new FileReader();
+
+                reader.onload = function (event) {
+                    const content = event.target.result;
+                    const processedContent = processFile(content);
+                    processedData.push(processedContent);
+
+                    filesProcessed++;
+                    if (filesProcessed === files.length) {
+                        // Tudo processado, exibe o editor
+                        loadEditor();
+                    }
+                };
+
+                reader.readAsText(file);
+            }
+        }
+
+        function processFile(content) {
+            const lines = content.split('\n');
+            let processedContent = '';
+
+            for (let i = 0; i < lines.length; i++) {
+                const shortcode = '[' + ('00' + (i + 1)).slice(-3) + ']';
+                processedContent += shortcode + lines[i] + '\n';
+            }
+
+            // Substitui os shortcodes no modelo pelo conteúdo processado
+            const finalContent = modeloTxt.replace(/\[\d{3}\]/g, function(match) {
+                const index = parseInt(match.slice(1, 4)) - 1;
+                return lines[index] ? lines[index].trim() : match;
+            });
+
+            return finalContent;
+        }
+
+        function loadEditor() {
+            $('#uploadBox').hide();  // Ocultar a caixa de upload
+            $('#editorBox').show();  // Exibir a caixa do editor
+
+            // Lógica para exibir as questões no editor
+            $('#trailContainer').empty();
+            processedData.forEach((content, index) => {
+                $('#trailContainer').append(`<p><strong>Questão ${index + 1}</strong>:<br>${content}</p>`);
+            });
+        }
+
+        function generateDownload() {
+            let finalContent = processedData.join('\n');
+            const blob = new Blob([finalContent], { type: 'text/plain' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'questoes_alteradas.txt';
+            link.click();
+        }
+    </script>
 </body>
 </html>
