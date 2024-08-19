@@ -6,23 +6,136 @@
 <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
 <script src="https://cdn.tiny.cloud/1/wngoh8cdfbnclgn1ulvujvsb6dj9l76xarp1im1r3wt2zhh9/tinymce/5/tinymce.min.js" referrerpolicy="origin"></script>
 <style>
-  .tox .tox-notification--warn, .tox .tox-notification--error { display: none !important; }
-  .modal-lg { max-width: 90%; }
-  .correct { background-color: lightgreen; }
-  .incorrect { background-color: lightcoral; }
-  .feedback { margin-left: 30px; background-color: #f0f0f0; padding: 10px; border-radius: 5px; }
-  .feedback-editor { background-color: #f5f5f5; }
+    body {
+        background-color: #f9f9f9;
+        font-family: 'Roboto', sans-serif;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+    }
+
+    #uploadBox {
+        background-color: #fff;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        padding: 40px;
+        text-align: center;
+        max-width: 400px;
+        width: 100%;
+    }
+
+    #uploadBox h2 {
+        color: #333;
+        font-size: 24px;
+        font-weight: bold;
+        margin-bottom: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    #uploadIcon {
+        font-size: 36px;
+        margin-right: 10px;
+        color: #2196F3;
+    }
+
+    #fileLabel {
+        background-color: #2196F3;
+        border: none;
+        border-radius: 4px;
+        color: #fff;
+        cursor: pointer;
+        font-size: 16px;
+        padding: 10px 20px;
+        transition: background-color 0.3s ease;
+        display: block;
+        margin: 0 auto 20px;
+        width: fit-content;
+    }
+
+    #fileLabel:hover {
+        background-color: #1976D2;
+    }
+
+    #processButton {
+        background-color: #4CAF50;
+        border: none;
+        border-radius: 4px;
+        color: #fff;
+        cursor: pointer;
+        font-size: 16px;
+        padding: 10px 20px;
+        transition: background-color 0.3s ease;
+        display: block;
+        margin: 0 auto;
+        width: fit-content;
+    }
+
+    #processButton:hover {
+        background-color: #388E3C;
+    }
+
+    #uploadBox input[type="file"] {
+        display: none;
+    }
+
+    #trailName {
+        width: 100%;
+        padding: 10px;
+        margin-bottom: 20px;
+        font-size: 16px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+    }
+
+    .container {
+        margin-top: auto;
+    }
+
+.mt-3, .my-3 {
+    margin-top: auto !important;
+}
+    .modal-lg { 
+        max-width: 90%; 
+    }
+    
+    .correct { 
+        background-color: lightgreen; 
+    }
+    
+    .incorrect { 
+        background-color: lightcoral; 
+    }
+    
+    .feedback { 
+        margin-left: 30px; 
+        background-color: #f0f0f0; 
+        padding: 10px; 
+        border-radius: 5px; 
+    }
+    
+    .feedback-editor { 
+        background-color: #f5f5f5; 
+    }
 </style>
 </head>
 <body>
-<div class="container mt-3">
-  <h2>Editor de Questões</h2>
-  <input type="file" id="fileInput" accept=".txt" class="form-control mb-3">
-  <div id="trailContainer">
-    <!-- Trilhas e questões serão adicionadas aqui -->
-  </div>
-  <button id="downloadChanges" class="btn btn-success mt-3">Download Alterações</button>
-<br>
+<div id="uploadBox">
+    <h2>Upload de Arquivo</h2>
+    <label id="fileLabel" for="fileInput">Escolher Arquivo</label>
+    <input type="file" id="fileInput" accept=".txt">
+    <button id="processButton">Processar Arquivo</button>
+</div>
+
+<div class="container mt-3" style="display:none">
+    <h2>Editor de Questões</h2>
+    <div id="trailContainer">
+        <!-- Trilhas e questões serão adicionadas aqui -->
+    </div>
+    <button id="downloadChanges" class="btn btn-success mt-3">Download Alterações</button>
 </div>
 
 <!-- Modal para edição de questões -->
@@ -66,59 +179,66 @@ let originalFileContent = ""; // Armazena o conteúdo original do arquivo
 let isModified = false; // Flag para monitorar se o conteúdo foi modificado
 
 $(document).ready(function() {
-  $('#fileInput').on('change', function(event) {
-    const file = event.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        originalFileContent = e.target.result; // Salva o conteúdo original
-        const questions = originalFileContent.split('// question:').slice(1);
-
-        // Processa as questões
-        questionsData = questions.map((questionText, index) => {
-          if (questionText.includes('Switch category to $course$/top/')) return null;
-
-          const nameMatch = questionText.match(/name: (.+?)\n/);
-          let htmlMatch = questionText.match(/\[html\](.+?)\{/s);
-          
-          // Corrigir \n e escapamentos de caracteres
-          if (htmlMatch) {
-            htmlMatch = htmlMatch[1].replace(/\\:/g, ":").replace(/\\n/g, "<br>");
-          }
-
-          const alternatives = extractAlternatives(questionText);
-
-          const questionName = nameMatch ? nameMatch[1].trim() : '';
-          const unitMatch = questionName.match(/Q_\d{2}_(UN|U)_(\d{2})/); // Identifica unidade
-
-          if (unitMatch) {
-            const unitNumber = parseInt(unitMatch[2], 10); // Pega número da unidade
-            const trailNumber = Math.ceil(unitNumber / 5);  // Divide em trilhas (1 a 5 = trilha 1, etc.)
-            const trail = `Trilha ${trailNumber}`;
-
-            return {
-              id: index + 1,
-              name: questionName,
-              trail: trail,
-              originalText: questionText, // Armazena o texto original da questão
-              html: htmlMatch ? htmlMatch.trim() : '',
-              alternatives: alternatives
-            };
-          }
-          return null;
-        }).filter(Boolean);
-
-        renderQuestions();
-      };
-      reader.readAsText(file);
+  $('#processButton').on('click', function() {
+    const fileInput = $('#fileInput')[0].files[0];
+    if (!fileInput) {
+      alert('Por favor, selecione um arquivo.');
+      return;
     }
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      originalFileContent = e.target.result;
+      processFileContent(originalFileContent);
+      $('#uploadBox').hide();
+      $('.container').show();
+    };
+    reader.readAsText(fileInput);
   });
+
+  function processFileContent(content) {
+    const questions = content.split('// question:').slice(1);
+
+    questionsData = questions.map((questionText, index) => {
+      if (questionText.includes('Switch category to $course$/top/')) return null;
+
+      const nameMatch = questionText.match(/name: (.+?)\n/);
+      let htmlMatch = questionText.match(/\[html\](.+?)\{/s);
+      
+      // Corrigir \n e escapamentos de caracteres
+      if (htmlMatch) {
+        htmlMatch = htmlMatch[1].replace(/\\:/g, ":").replace(/\\n/g, "<br>");
+      }
+
+      const alternatives = extractAlternatives(questionText);
+
+      const questionName = nameMatch ? nameMatch[1].trim() : '';
+      const unitMatch = questionName.match(/Q_\d{2}_(UN|U)_(\d{2})/); // Identifica unidade
+
+      if (unitMatch) {
+        const unitNumber = parseInt(unitMatch[2], 10);
+        const trailNumber = Math.ceil(unitNumber / 5);
+        const trail = `Trilha ${trailNumber}`;
+
+        return {
+          id: index + 1,
+          name: questionName,
+          trail: trail,
+          originalText: questionText,
+          html: htmlMatch ? htmlMatch.trim() : '',
+          alternatives: alternatives
+        };
+      }
+      return null;
+    }).filter(Boolean);
+
+    renderQuestions();
+  }
 
   function renderQuestions() {
     const trailContainer = $('#trailContainer');
     trailContainer.empty();
 
-    // Agrupar questões por trilha
     const groupedByTrail = questionsData.reduce((acc, question) => {
       const trail = question.trail;
       acc[trail] = acc[trail] || [];
@@ -126,7 +246,6 @@ $(document).ready(function() {
       return acc;
     }, {});
 
-    // Renderizar cada trilha e suas questões
     Object.keys(groupedByTrail).forEach(trail => {
       const trailDiv = $('<div>').addClass('trail').append(`<h3>${trail}</h3>`);
       const table = $('<table>').addClass('table table-bordered');
@@ -142,7 +261,7 @@ $(document).ready(function() {
         editButton.on('click', function() {
           const questionId = $(this).data('question-id');
           loadQuestionModal(questionId);
-          $('#editModal').modal('show'); // Abrir modal corretamente
+          $('#editModal').modal('show');
         });
 
         const actionsCell = $('<td>').append(editButton);
@@ -171,9 +290,9 @@ $(document).ready(function() {
   }
 
   function loadQuestionModal(questionId) {
-    isModified = false; // Reiniciar flag de modificação
+    isModified = false;
     const question = questionsData.find(q => q.id === questionId);
-    $('#editForm').data('question-id', question.id); // Salvar o id da questão no formulário
+    $('#editForm').data('question-id', question.id);
     $('#questionName').val(question.name);
 
     tinymce.init({
@@ -184,17 +303,17 @@ $(document).ready(function() {
                 'searchreplace visualblocks code fullscreen',
                 'insertdatetime media table paste code help wordcount image code'],
       toolbar: 'undo redo | formatselect | bold italic backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | image | code',
-      automatic_uploads: false, // Desativar o upload de arquivos, já que você quer carregar imagens externas
-      image_advtab: true, // Ativa opções avançadas para imagens
-      images_upload_credentials: true, // Permite URLs de imagens externas
-      relative_urls: false, // Mantém URLs absolutas para imagens
-      extended_valid_elements: 'img[src|alt|width|height|class|role]', // Permitir atributos de imagem no HTML
+      automatic_uploads: false,
+      image_advtab: true,
+      images_upload_credentials: true,
+      relative_urls: false,
+      extended_valid_elements: 'img[src|alt|width|height|class|role]',
       setup: function(editor) {
         editor.on('init', function() {
           tinymce.get('questionText').setContent(question.html);
         });
         editor.on('change', function() {
-          isModified = true; // Indicar que o conteúdo foi modificado
+          isModified = true;
         });
       }
     });
@@ -254,13 +373,11 @@ $(document).ready(function() {
       question.alternatives[index].isCorrect = isCorrect;
     });
 
-    // Salva as alterações e fecha o modal
     renderQuestions();
     $('#editModal').modal('hide');
-    isModified = false; // Reiniciar flag de modificação após salvar
+    isModified = false;
   });
 
-  // Adicionar aviso antes de fechar modal sem salvar
   $('#modalClose, #cancelChanges').on('click', function() {
     if (isModified) {
       if (confirm("Você tem alterações não salvas. Deseja realmente sair sem salvar?")) {
@@ -276,9 +393,8 @@ $(document).ready(function() {
     tinymce.remove('#questionText');
   });
 
-  // Baixar as alterações feitas em um arquivo
   $('#downloadChanges').on('click', function() {
-    let updatedContent = originalFileContent; // Começa com o conteúdo original
+    let updatedContent = originalFileContent;
 
     questionsData.forEach(question => {
       const questionText = question.originalText;
@@ -288,7 +404,6 @@ $(document).ready(function() {
         return `${correctSymbol}${alt.text}#${alt.feedback}`;
       }).join('\n');
 
-      // Substituir conteúdo HTML e alternativas atualizadas
       updatedContent = updatedContent.replace(questionText, `name: ${question.name}\n[html]${updatedHtml}{\n${updatedAlternatives}\n}`);
     });
 
