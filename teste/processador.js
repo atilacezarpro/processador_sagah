@@ -87,8 +87,31 @@ function processModelFiles(trailName) {
 }
 
 function exibirConteudoEditavel(content) {
-    // Aqui você pode ajustar o conteúdo para ser exibido na interface de edição
-    document.getElementById('trailContainer').innerText = content;  // Exibindo o conteúdo processado
-    $('#uploadBox').hide(); // Esconde a tela de upload
-    $('.container').show(); // Mostra a interface de edição
+    const trailContainer = document.getElementById('trailContainer');
+    trailContainer.innerHTML = '';  // Limpar qualquer conteúdo existente
+
+    // Dividir o conteúdo processado em questões
+    const questions = content.split('// question:').slice(1);
+
+    questions.forEach((questionText, index) => {
+        const questionDiv = document.createElement('div');
+        questionDiv.classList.add('question');
+
+        const title = document.createElement('h3');
+        title.innerText = `Questão ${index + 1}`;
+        questionDiv.appendChild(title);
+
+        // Exibe o texto da questão para edição
+        const textArea = document.createElement('textarea');
+        textArea.classList.add('form-control');
+        textArea.rows = 10;
+        textArea.value = questionText.trim();
+        questionDiv.appendChild(textArea);
+
+        trailContainer.appendChild(questionDiv);
+    });
+
+    // Mostra a área de edição e oculta a caixa de upload
+    $('#uploadBox').hide();
+    $('.container').show();
 }
