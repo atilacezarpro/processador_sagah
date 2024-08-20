@@ -1,133 +1,125 @@
 <!DOCTYPE html>
 <html lang="pt">
 <head>
-<meta charset="UTF-8">
-<title>Editor de Questões</title>
-<link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
-<script src="https://cdn.tiny.cloud/1/wngoh8cdfbnclgn1ulvujvsb6dj9l76xarp1im1r3wt2zhh9/tinymce/5/tinymce.min.js" referrerpolicy="origin"></script>
-<style>
-    body {
-        background-color: #f9f9f9;
-        font-family: 'Roboto', sans-serif;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100vh;
-        margin: 0;
-    }
+    <meta charset="UTF-8">
+    <title>Editor de Questões</title>
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.tiny.cloud/1/wngoh8cdfbnclgn1ulvujvsb6dj9l76xarp1im1r3wt2zhh9/tinymce/5/tinymce.min.js" referrerpolicy="origin"></script>
+    <style>
+        body {
+            background-color: #f9f9f9;
+            font-family: 'Roboto', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
 
-    #uploadBox {
-        background-color: #fff;
-        border-radius: 8px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        padding: 40px;
-        text-align: center;
-        max-width: 400px;
-        width: 100%;
-    }
+        #uploadBox {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            text-align: center;
+            max-width: 400px;
+            width: 100%;
+        }
 
-    #uploadBox h2 {
-        color: #333;
-        font-size: 24px;
-        font-weight: bold;
-        margin-bottom: 30px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
+        #uploadBox h2 {
+            color: #333;
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
 
-    #uploadIcon {
-        font-size: 36px;
-        margin-right: 10px;
-        color: #2196F3;
-    }
+        #fileLabel {
+            background-color: #2196F3;
+            border: none;
+            border-radius: 4px;
+            color: #fff;
+            cursor: pointer;
+            font-size: 16px;
+            padding: 10px 20px;
+            transition: background-color 0.3s ease;
+            display: block;
+            margin: 0 auto 20px;
+            width: fit-content;
+        }
 
-    #fileLabel {
-        background-color: #2196F3;
-        border: none;
-        border-radius: 4px;
-        color: #fff;
-        cursor: pointer;
-        font-size: 16px;
-        padding: 10px 20px;
-        transition: background-color 0.3s ease;
-        display: block;
-        margin: 0 auto 20px;
-        width: fit-content;
-    }
+        #fileLabel:hover {
+            background-color: #1976D2;
+        }
 
-    #fileLabel:hover {
-        background-color: #1976D2;
-    }
+        #processButton {
+            background-color: #4CAF50;
+            border: none;
+            border-radius: 4px;
+            color: #fff;
+            cursor: pointer;
+            font-size: 16px;
+            padding: 10px 20px;
+            transition: background-color 0.3s ease;
+            display: block;
+            margin: 0 auto;
+            width: fit-content;
+        }
 
-    #processButton {
-        background-color: #4CAF50;
-        border: none;
-        border-radius: 4px;
-        color: #fff;
-        cursor: pointer;
-        font-size: 16px;
-        padding: 10px 20px;
-        transition: background-color 0.3s ease;
-        display: block;
-        margin: 0 auto;
-        width: fit-content;
-    }
+        #processButton:hover {
+            background-color: #388E3C;
+        }
 
-    #processButton:hover {
-        background-color: #388E3C;
-    }
+        #uploadBox input[type="file"] {
+            display: none;
+        }
 
-    #uploadBox input[type="file"] {
-        display: none;
-    }
+        #trailName {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 20px;
+            font-size: 16px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
 
-    #trailName {
-        width: 100%;
-        padding: 10px;
-        margin-bottom: 20px;
-        font-size: 16px;
-        border: 1px solid #ddd;
-        border-radius: 4px;
-    }
+        .container {
+            margin-top: auto;
+        }
 
-    .container {
-        margin-top: auto;
-    }
+        .modal-lg {
+            max-width: 90%;
+        }
 
-.mt-3, .my-3 {
-    margin-top: auto !important;
-}
-    .modal-lg { 
-        max-width: 90%; 
-    }
-    
-    .correct { 
-        background-color: lightgreen; 
-    }
-    
-    .incorrect { 
-        background-color: lightcoral; 
-    }
-    
-    .feedback { 
-        margin-left: 30px; 
-        background-color: #f0f0f0; 
-        padding: 10px; 
-        border-radius: 5px; 
-    }
-    
-    .feedback-editor { 
-        background-color: #f5f5f5; 
-    }
-</style>
+        .correct {
+            background-color: lightgreen;
+        }
+
+        .incorrect {
+            background-color: lightcoral;
+        }
+
+        .feedback {
+            margin-left: 30px;
+            background-color: #f0f0f0;
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        .feedback-editor {
+            background-color: #f5f5f5;
+        }
+    </style>
 </head>
 <body>
 <div id="uploadBox">
     <h2>Editor de Questões</h2>
+    <input type="text" id="trailName" placeholder="Número da trilha">
     <label id="fileLabel" for="fileInput">Escolher Arquivo</label>
     <input type="file" id="fileInput" accept=".txt">
-    <button id="processButton">Abrir edição</button>
+    <button id="processButton">Processar Arquivos</button>
 </div>
 
 <div class="container mt-3" style="display:none">
@@ -139,353 +131,165 @@
     <br>
 </div>
 
-<!-- Modal para edição de questões -->
-<div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true" data-backdrop="static">
-  <div class="modal-dialog modal-lg">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="editModalLabel">Editar Questão</h5>
-        <button type="button" class="close" id="modalClose" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
-        </button>
-      </div>
-      <div class="modal-body">
-        <form id="editForm">
-          <div class="form-group">
-            <label for="questionName">Nome da Questão:</label>
-            <input type="text" id="questionName" class="form-control">
-          </div>
-          <div class="form-group">
-            <label for="questionText">Enunciado:</label>
-            <textarea id="questionText" class="form-control"></textarea>
-          </div>
-          <div id="alternativesContainer" class="form-group">
-            <!-- Alternativas serão adicionadas dinamicamente -->
-          </div>
-        </form>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" id="cancelChanges">Cancelar</button>
-        <button type="button" class="btn btn-primary" id="saveChanges">Salvar Alterações</button>
-      </div>
-    </div>
-  </div>
-</div>
-
 <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
 <script>
-let questionsData = []; // Armazena as questões globalmente
-let originalFileContent = ""; // Armazena o conteúdo original
-let isModified = false; // Flag para monitorar se o conteúdo foi modificado
+// Variável global para armazenar os dados processados temporariamente
+var processedData = [];
 
-$(document).ready(function() {
-  // Checa se existe conteúdo armazenado no sessionStorage
-  const trailName = 'nome_da_trilha'; // Substitua pelo nome adequado
-  const cachedContent = sessionStorage.getItem('processedContent_' + trailName);
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('processButton').addEventListener('click', function(event) {
+        var trailName = document.getElementById('trailName').value.trim();
+        if (!trailName) {
+            alert('Por favor, insira o número da trilha.');
+            return;
+        }
 
-  if (cachedContent) {
-    // Se houver conteúdo em cache, processa diretamente
-    originalFileContent = cachedContent;
-    processFileContent(originalFileContent);
-    $('#uploadBox').hide();
-    $('.container').show();
-  } else {
-    // Continua com o processo de upload de arquivo caso não haja conteúdo em cache
-    $('#processButton').on('click', function() {
-      const fileInput = $('#fileInput')[0].files[0];
-      if (!fileInput) {
-        alert('Por favor, selecione um arquivo.');
-        return;
-      }
+        var fileInput = document.getElementById('fileInput');
+        var files = fileInput.files;
 
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        originalFileContent = e.target.result;
+        if (files.length > 0) {
+            processFiles(files, trailName);
+        } else {
+            alert('Por favor, selecione um ou mais arquivo(s) para enviar.');
+        }
+    });
+});
+
+function processFiles(files, trailName) {
+    processedData = []; // Limpa os dados processados anteriores
+    var filesProcessed = 0;
+
+    for (var i = 0; i < files.length; i++) {
+        var file = files[i];
+        var reader = new FileReader();
+
+        reader.onload = (function(file) {
+            return function(event) {
+                var content = event.target.result;
+                var processedContent = processarArquivo(content); // Função para processar o arquivo
+                processedData.push(processedContent); // Armazena os dados processados temporariamente
+
+                filesProcessed++;
+                if (filesProcessed === files.length) {
+                    processModelFiles(trailName);
+                }
+            };
+        })(file);
+
+        reader.readAsText(file);
+    }
+}
+
+function processarArquivo(content) {
+    // Dividir o conteúdo do arquivo em linhas
+    var lines = content.split('\n');
+    var processedContent = '';
+
+    // Iterar sobre cada linha e adicionar o shortcode numerado
+    for (var i = 0; i < lines.length; i++) {
+        var shortcode = '[' + ('00' + (i + 1)).slice(-3) + ']';
+        processedContent += shortcode + lines[i] + '\n'; // Removido o espaço entre shortcode e linha
+    }
+
+    return processedContent;
+}
+
+function processModelFiles(trailName) {
+    // Carrega o arquivo modelo
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', 'modelo.txt', true);
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4 && xhr.status === 200) {
+            var modelContent = xhr.responseText;
+            var finalContent = '';
+
+            // Substitui os shortcodes no modelo pelo conteúdo processado
+            for (var i = 0; i < processedData.length; i++) {
+                var lines = processedData[i].split('\n');
+                var processedModelContent = modelContent.replace(/\[\d{3}\]/g, function(match) {
+                    var index = parseInt(match.slice(1, 4));
+                    return lines[index - 1] ? lines[index - 1].slice(5).trim() : match;
+                });
+                finalContent += processedModelContent + '\n';
+            }
+
+            // Armazena o conteúdo processado no sessionStorage para uso posterior
+            sessionStorage.setItem('processedContent_' + trailName, finalContent);
+
+            // Após processar, exibir o conteúdo para edição
+            abrirEdicao(trailName);
+        }
+    };
+    xhr.send();
+}
+
+// Função para abrir a tela de edição com o conteúdo armazenado no sessionStorage
+function abrirEdicao(trailName) {
+    const cachedContent = sessionStorage.getItem('processedContent_' + trailName);
+    if (cachedContent) {
+        originalFileContent = cachedContent;
         processFileContent(originalFileContent);
         $('#uploadBox').hide();
         $('.container').show();
-      };
-      reader.readAsText(fileInput);
-    });
-  }
+    } else {
+        alert('Nenhum conteúdo encontrado para a trilha: ' + trailName);
+    }
+}
 
-  function processFileContent(content) {
+function processFileContent(content) {
     const questions = content.split('// question:').slice(1);
 
     questionsData = questions.map((questionText, index) => {
-      if (questionText.includes('Switch category to $course$/top/')) return null;
+        const nameMatch = questionText.match(/name: (.+?)\n/);
+        let htmlMatch = questionText.match(/\[html\](.+?)\{/s);
 
-      const nameMatch = questionText.match(/name: (.+?)\n/);
-      let htmlMatch = questionText.match(/\[html\](.+?)\{/s);
-      
-      if (htmlMatch) {
-        htmlMatch = htmlMatch[1].replace(/\\/g, "");  // Remove barras invertidas
-      }
+        if (htmlMatch) {
+            htmlMatch = htmlMatch[1].replace(/\\/g, "");
+        }
 
-      const alternatives = extractAlternatives(questionText);
-
-      const questionName = nameMatch ? nameMatch[1].trim() : '';
-      const unitMatch = questionName.match(/Q_\d{2}_(UN|U)_(\d{2})/);
-
-      if (unitMatch) {
-        const unitNumber = parseInt(unitMatch[2], 10);
-        const trailNumber = Math.ceil(unitNumber / 5);
-        const trail = `Trilha ${trailNumber}`;
+        const alternatives = extractAlternatives(questionText);
+        const questionName = nameMatch ? nameMatch[1].trim() : '';
 
         return {
-          id: index + 1,
-          name: questionName,
-          trail: trail,
-          originalText: questionText,
-          html: htmlMatch ? htmlMatch.trim() : '',
-          alternatives: alternatives
+            id: index + 1,
+            name: questionName,
+            html: htmlMatch ? htmlMatch.trim() : '',
+            alternatives: alternatives
         };
-      }
-      return null;
-    }).filter(Boolean);
+    });
 
     renderQuestions();
-  }
+}
 
-
-
-  function renderQuestions() {
-    const trailContainer = $('#trailContainer');
-    trailContainer.empty();
-
-    const groupedByTrail = questionsData.reduce((acc, question) => {
-      const trail = question.trail;
-      acc[trail] = acc[trail] || [];
-      acc[trail].push(question);
-      return acc;
-    }, {});
-
-    Object.keys(groupedByTrail).forEach(trail => {
-      const trailDiv = $('<div>').addClass('trail').append(`<h3>${trail}</h3>`);
-      const table = $('<table>').addClass('table table-bordered');
-      const tableHead = $('<thead><tr><th>Questão</th><th>Enunciado</th><th>Ações</th></tr></thead>');
-      const tableBody = $('<tbody></tbody>');
-
-      groupedByTrail[trail].forEach((question) => {
-        const row = $('<tr>');
-        const nameCell = $('<td>').text(question.name);
-        const htmlCell = $('<td>').html(question.html.substring(0, 100) + '...');
-        const editButton = $('<button>').addClass('btn btn-primary').text('Editar').data('question-id', question.id);
-
-        editButton.on('click', function() {
-          const questionId = $(this).data('question-id');
-          loadQuestionModal(questionId);
-          $('#editModal').modal('show');
-        });
-
-        const actionsCell = $('<td>').append(editButton);
-        row.append(nameCell, htmlCell, actionsCell);
-        tableBody.append(row);
-      });
-
-      table.append(tableHead).append(tableBody);
-      trailDiv.append(table);
-      trailContainer.append(trailDiv);
-    });
-  }
-
-  function extractAlternatives(questionText) {
+function extractAlternatives(questionText) {
     const regex = /([~=])([^\n#]+)#([^\n]*)/g;
     let match;
     const alternatives = [];
-    while ((match = regex.exec(questionText)) !== null) {
-      const text = match[2].replace(/\\/g, "").trim();
-      const feedback = match[3].replace(/\\/g, "").trim();
 
-      alternatives.push({
-        isCorrect: match[1] === '=',
-        text: text,
-        feedback: feedback
-      });
+    while ((match = regex.exec(questionText)) !== null) {
+        const text = match[2].replace(/\\/g, "").trim();
+        const feedback = match[3].replace(/\\/g, "").trim();
+
+        alternatives.push({
+            isCorrect: match[1] === '=',
+            text: text,
+            feedback: feedback
+        });
     }
     return alternatives;
-  }
+}
 
-  function loadQuestionModal(questionId) {
-    isModified = false;
-    const question = questionsData.find(q => q.id === questionId);
-    $('#editForm').data('question-id', question.id);
-    $('#questionName').val(question.name);
+function renderQuestions() {
+    const trailContainer = $('#trailContainer');
+    trailContainer.empty();
 
-    tinymce.init({
-        selector: '#questionText',
-        height: 300,
-        menubar: false,
-        plugins: [
-            'advlist autolink lists link image charmap print preview anchor',
-            'searchreplace visualblocks code fullscreen',
-            'insertdatetime media table paste code help wordcount',
-            'image code'  // Habilitar edição de código e imagens
-        ],
-        toolbar: 'undo redo | formatselect | bold italic backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | image | code',  // Adicionar os botões 'image' e 'code'
-        automatic_uploads: false,
-        image_advtab: true,
-        images_upload_credentials: true,
-        relative_urls: false,
-        extended_valid_elements: 'img[src|alt|width|height|class|role]',
-        file_picker_callback: function(callback, value, meta) {
-            if (meta.filetype === 'image') {
-                let imageUrl = prompt('Enter the URL of the image');
-                if (imageUrl) {
-                    callback(imageUrl, {alt: 'Image description'});
-                }
-            }
-        },
-        setup: function(editor) {
-            editor.on('init', function() {
-                tinymce.get('questionText').setContent(question.html);
-            });
-            editor.on('change', function() {
-                isModified = true;
-            });
-        }
+    questionsData.forEach((question) => {
+        const row = $('<div>').text(`Questão: ${question.name}`);
+        trailContainer.append(row);
     });
-
-    const container = $('#alternativesContainer');
-    container.empty();
-
-    question.alternatives.forEach((alt, index) => {
-      const altHtml = $('<textarea>').addClass('form-control my-2 question-editor').val(alt.text);
-      const feedbackHtml = $('<textarea>').addClass('form-control my-2 feedback-editor feedback').val(alt.feedback);
-
-      const label = $('<label>').text(`Alternativa ${index + 1}`);
-      const feedbackLabel = $('<label>').text(`Feedback - Alternativa ${index + 1}`);
-      const selectHtml = $('<select>').addClass('form-control mb-2')
-        .html(`<option value="false"${!alt.isCorrect ? ' selected' : ''}>Incorreta</option>
-               <option value="true"${alt.isCorrect ? ' selected' : ''}>Correta</option>`)
-        .addClass(alt.isCorrect ? 'correct' : 'incorrect');
-
-      const div = $('<div>').addClass('form-group').append(label, selectHtml, altHtml, feedbackLabel, feedbackHtml);
-      container.append(div);
-    });
-
-    setTimeout(() => {
-      tinymce.init({
-        selector: '.question-editor',
-        height: 150,
-        menubar: false,
-        plugins: [
-            'advlist autolink lists link image charmap print preview anchor',
-            'searchreplace visualblocks code fullscreen',
-            'insertdatetime media table paste code help wordcount',
-            'image code'  // Adicionar suporte a edição de código e imagens
-        ],
-        toolbar: 'undo redo | formatselect | bold italic backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | image | code',  // Incluir botões 'image' e 'code'
-        automatic_uploads: false,
-        image_advtab: true,
-        images_upload_credentials: true,
-        relative_urls: false,
-        extended_valid_elements: 'img[src|alt|width|height|class|role]',
-        file_picker_callback: function(callback, value, meta) {
-            if (meta.filetype === 'image') {
-                let imageUrl = prompt('Enter the URL of the image');
-                if (imageUrl) {
-                    callback(imageUrl, {alt: 'Image description'});
-                }
-            }
-        }
-      });
-      tinymce.init({
-        selector: '.feedback-editor',
-        height: 150,
-        menubar: false,
-        plugins: [
-            'advlist autolink lists link image charmap print preview anchor',
-            'searchreplace visualblocks code fullscreen',
-            'insertdatetime media table paste code help wordcount',
-            'image code'  // Adicionar suporte a edição de código e imagens
-        ],
-        toolbar: 'undo redo | formatselect | bold italic backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | image | code',  // Incluir botões 'image' e 'code'
-        automatic_uploads: false,
-        image_advtab: true,
-        images_upload_credentials: true,
-        relative_urls: false,
-        extended_valid_elements: 'img[src|alt|width|height|class|role]',
-        file_picker_callback: function(callback, value, meta) {
-            if (meta.filetype === 'image') {
-                let imageUrl = prompt('Enter the URL of the image');
-                if (imageUrl) {
-                    callback(imageUrl, {alt: 'Image description'});
-                }
-            }
-        }
-      });
-    }, 100);
-  }
-
-  $('#saveChanges').on('click', function() {
-    const questionId = $('#editForm').data('question-id');
-    const question = questionsData.find(q => q.id === questionId);
-    question.name = $('#questionName').val();
-    question.html = tinymce.get('questionText').getContent();
-
-    $('#alternativesContainer .form-group').each(function(index) {
-      const altText = $(this).find('.question-editor').val();
-      const feedbackText = $(this).find('.feedback-editor').val();
-      const isCorrect = $(this).find('select').val() === 'true';
-      question.alternatives[index].text = altText;
-      question.alternatives[index].feedback = feedbackText;
-      question.alternatives[index].isCorrect = isCorrect;
-    });
-
-    renderQuestions();
-    $('#editModal').modal('hide');
-    isModified = false;
-  });
-
-  $('#modalClose, #cancelChanges').on('click', function() {
-    if (isModified) {
-      if (confirm("Você tem alterações não salvas. Deseja realmente sair sem salvar?")) {
-        $('#editModal').modal('hide');
-      }
-    } else {
-      $('#editModal').modal('hide');
-    }
-  });
-
-  $('#editModal').on('hide.bs.modal', function () {
-    tinymce.remove('.question-editor');
-    tinymce.remove('#questionText');
-  });
-
-  $('#downloadChanges').on('click', function() {
-    let updatedContent = originalFileContent;
-
-    questionsData.forEach(question => {
-        const questionText = question.originalText;
-        const updatedHtml = question.html;
-        
-        // Formatar alternativas corretamente
-        const updatedAlternatives = question.alternatives.map(alt => {
-            const correctSymbol = alt.isCorrect ? '=' : '~'; // GIFT format for correct/incorrect
-            return `${correctSymbol}${alt.text}#${alt.feedback}`; // Format alternatives with feedback
-        }).join('\n');
-        
-        // Substituição correta das alternativas no texto original
-        const regexAlternatives = /([~=])([^\n#]+)#([^\n]*)/g;
-        let alternativeIndex = 0;
-
-        // Substituir conteúdo antigo por atualizado
-        updatedContent = updatedContent.replace(questionText, questionText.replace(/\[html\](.+?)\{/, `[html]${updatedHtml}{`).replace(regexAlternatives, function(match, p1, p2, p3) {
-            const updatedAlt = updatedAlternatives.split('\n')[alternativeIndex++];
-            return updatedAlt ? updatedAlt : match;
-        }));
-    });
-
-    // Gerar o arquivo para download
-    const blob = new Blob([updatedContent], { type: 'text/plain' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = 'questoes_alteradas.txt';
-    link.click();
-  });
-});
+}
 
 </script>
 </body>
