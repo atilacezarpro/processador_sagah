@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerador de CSV de Questões</title>
+    <style>
+        body {
+            background-color: #f9f9f9;
+            font-family: 'Roboto', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        #uploadBox {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            text-align: center;
+            max-width: 400px;
+            width: 100%;
+        }
+
+        #uploadBox h2 {
+            color: #333;
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #uploadIcon {
+            font-size: 36px;
+            margin-right: 10px;
+            color: #2196F3;
+        }
+
+        #fileLabel {
+            background-color: #2196F3;
+            border: none;
+            border-radius: 4px;
+            color: #fff;
+            cursor: pointer;
+            font-size: 16px;
+            padding: 10px 20px;
+            transition: background-color 0.3s ease;
+            display: block;
+            margin: 0 auto 20px;
+            width: fit-content;
+        }
+
+        #fileLabel:hover {
+            background-color: #1976D2;
+        }
+
+        #processButton {
+            background-color: #4CAF50;
+            border: none;
+            border-radius: 4px;
+            color: #fff;
+            cursor: pointer;
+            font-size: 16px;
+            padding: 10px 20px;
+            transition: background-color 0.3s ease;
+            display: block;
+            margin: 0 auto;
+            width: fit-content;
+        }
+
+        #processButton:hover {
+            background-color: #388E3C;
+        }
+
+        #uploadBox input[type="file"] {
+            display: none;
+        }
+
+        #trailName {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 20px;
+            font-size: 16px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .container {
+            margin-top: auto;
+        }
+
+        .mt-3, .my-3 {
+            margin-top: auto !important;
+        }
+
+        .modal-lg { 
+            max-width: 90%; 
+        }
+
+        .correct { 
+            background-color: lightgreen; 
+        }
+
+        .incorrect { 
+            background-color: lightcoral; 
+        }
+
+        .feedback { 
+            margin-left: 30px; 
+            background-color: #f0f0f0; 
+            padding: 10px; 
+            border-radius: 5px; 
+        }
+
+        .feedback-editor { 
+            background-color: #f5f5f5; 
+        }
+    </style>
+</head>
+<body>
+    <div id="uploadBox">
+        <h2><span id="uploadIcon">⬆️</span> Gerador de CSV de Questões</h2>
+        <label id="fileLabel" for="fileInput">Selecionar Arquivo</label>
+        <input type="file" id="fileInput" accept=".txt" />
+        <button id="processButton">Gerar CSV</button>
+    </div>
+    
+    <script>
+        function parseDocument(content) {
+            const lines = content.split('\n');
+            let csvContent = "titulo,texto_questao,tipo,alternativa_1,alternativa_2,alternativa_3,alternativa_4,alternativa_5,alternativa_Correta\n";
+            let i = 4; // Começa a partir da linha 5, ignorando as primeiras 4
+
+            while (i < lines.length) {
+                const tituloLine = lines[i].split('name:');
+                if (tituloLine.length > 1) {
+                    const titulo = tituloLine[1].trim();
+                    const questaoMatch = lines[i + 1].match(/\[html\](.*)<\/p>/);
+                    if (questaoMatch && questaoMatch.length > 1) {
+                        const textoQuestao = questaoMatch[1].replace(/<\/?[^>]+(>|$)/g, "").trim();
+                        
+                        let alternativas = [];
+                        let alternativaCorreta = '';
+
+                        for (let j = 0; j < 5; j++) {
+                            const lineContent = lines[i + 2 + j * 2]?.trim() || '';
+                            let alternativaTratada = lineContent.replace(/^[~=]/, '').replace(/<\/?[^>]+(>|$)/g, "").trim();
+                            alternativas[j] = alternativaTratada;
+                            if (lineContent.startsWith('=')) {
+                                alternativaCorreta = (j + 1).toString();
+                            }
+                        }
+
+                        while (alternativas.length < 5) {
+                            alternativas.push('');
+                        }
+
+                        csvContent += `"${titulo}","${textoQuestao}","objetiva","${alternativas[0]}","${alternativas[1]}","${alternativas[2]}","${alternativas[3]}","${alternativas[4]}","${alternativaCorreta}"\n`;
+                    }
+                }
+                i += 1;
+                while (i < lines.length && !lines[i].includes('name:')) {
+                    i++;
+                }
+            }
+            
+            return csvContent;
+        }
+
+        function downloadCSV(csvContent, fileName) {
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            if (link.download !== undefined) {
+                const url = URL.createObjectURL(blob);
+                link.setAttribute("href", url);
+                link.setAttribute("download", fileName);
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+        }
+
+        document.getElementById('processButton').addEventListener('click', () => {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const content = e.target.result;
+                    const csvContent = parseDocument(content);
+                    downloadCSV(csvContent, 'output.csv');
+                };
+                reader.readAsText(file);
+            } else {
+                alert("Por favor, selecione um arquivo de texto.");
+            }
+        });
+    </script>
+</body>
+</html>
