@@ -128,13 +128,15 @@
     <h2>Editor de Questões</h2>
     <label id="fileLabel" for="fileInput">Escolher Arquivo</label>
     <input type="file" id="fileInput" accept=".txt">
+    <input type="text" id="trailName" placeholder="Nome da trilha">
     <button id="processButton">Abrir edição</button>
 </div>
 
+<!-- Área onde o conteúdo processado será exibido -->
 <div class="container mt-3" style="display:none">
     <h2>Editor de Questões</h2><br>
     <div id="trailContainer">
-        <!-- Trilhas e questões serão adicionadas aqui -->
+        <!-- Trilhas e questões processadas serão exibidas aqui -->
     </div><br>
     <button id="downloadChanges" class="btn btn-success mt-3">Download Alterações</button>
     <br>
