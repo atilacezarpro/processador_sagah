@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="pt-br" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title>Gestor de Questões - Hub </title>
+    <link href='https://fonts.googleapis.com/css?family=Titillium+Web:400,600,300,200&subset=latin,latin-ext' rel='stylesheet' type='text/css' />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet" type='text/css' />
+    <link href="https://univar.perseus.com.br//Servicos/Content/Css/HubCss?v=iCQEb-JaQk8NJQaWdR99wUHR_93JoWNFtb3p1ZAF4O01" rel="stylesheet"/>
+
+    <!-- Adicionar estilos customizados -->
+    <style>
+        /* Alterar cor de fundo do slide-1 */
+        #slide-1 {
+            background-color: #292B65 !important;
+        }
+        
+        /* Centralizar a imagem dentro do div #logo */
+        #logo {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+        }
+        
+        #logo img {
+            max-width: 100%;
+            height: auto;
+        }
+        
+        /* Configuração do layout para que o footer fique sempre no rodapé */
+        html, body {
+            height: 100%;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden; /* Prevenir rolagem horizontal */
+        }
+
+        body {
+            flex: 1;
+        }
+
+        #outer {
+            flex: 1;
+            display: block;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .footer {
+            background-color: #f1f1f1;
+            text-align: center;
+            padding: 20px;
+            margin-top: auto;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            width: 100%; /* Certificar que o footer não cause rolagem horizontal */
+            box-sizing: border-box; /* Inclui padding na largura do elemento */
+        }
+
+        .footer img {
+            width: 300px;
+            height: 150px;
+        }
+
+ 	.toten {
+            background-color: #292B65 !important;
+        }
+
+        /* Prevenir rolagem horizontal desnecessária */
+        * {
+            box-sizing: border-box;
+        }
+
+        .inner {
+            max-width: 100%; /* Assegurar que os botões não excedam a largura disponível */
+        }
+    </style>
+</head>
+<body>
+    <div class="slide story" id="slide-1">
+        <div id="logo">
+            <img src="#" alt="Logo">
+        </div>
+    </div>
+    <div id="modulo-acesso">
+        O que você precisa fazer?
+    </div>
+    <div id="outer">
+        <div class="inner">
+            <div>
+                <a href="https://atilacezarpro.github.io/processador_sagah/baixar.html">
+                    <div class="toten" id="baixar">
+                        <i class="fa fa-lg fa-cloud-download"></i>
+                        <div>Baixar questões</div>
+                    </div>
+                </a>
+            </div>
+        </div>
+        <div class="inner">
+            <div>
+                <a href="https://atilacezarpro.github.io/processador_sagah/processar.html">
+                    <div class="toten" id="processar">
+                        <i class="fa fa-lg fa-spinner"></i>
+                        <div>Processar questões</div>
+                    </div>
+                </a>
+            </div>
+        </div>
+	<div class="inner">
+            <div>
+                <a href="https://atilacezarpro.github.io/processador_sagah/editar.html">
+                    <div class="toten" id="editar">
+                        <i class="fa fa-lg fa-pencil-square-o"></i>
+                        <div>Editar questões</div>
+                    </div>
+                </a>
+            </div>
+        </div>
+        <div class="inner">
+            <div>
+                <a href="https://atilacezarpro.github.io/processador_sagah/converter.html">
+                    <div class="toten" id="converter">
+                        <i class="fa fa-lg fa-refresh"></i>
+                        <div>Converter questões</div>
+                    </div>
+                </a>
+            </div>
+        </div>
+       
+    </div>
+    
+    <div class="footer">
+        <p>Licenciado para <b>NEaD UNIVAR</b> até <i>31/12/2024</i></p>
+    </div>
+</body>
+</html>
