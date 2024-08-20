@@ -74,44 +74,19 @@ function processModelFiles(trailName) {
                 var lines = processedData[i].split('\n');
                 var processedModelContent = modelContent.replace(/\[\d{3}\]/g, function(match) {
                     var index = parseInt(match.slice(1, 4));
-                    return lines[index - 1] ? lines[index - 1].slice(5).trim() : match;
+                    return lines[index - 1] ? lines[index - 1].slice(5).trim() : match; // Remove o shortcode se a linha existir e remove espaços extras
                 });
                 finalContent += processedModelContent + '\n';
             }
 
-            // Em vez de baixar, vamos exibir o conteúdo processado na interface de edição
-            exibirConteudoEditavel(finalContent); // Função que mostra o conteúdo na interface
+            // Armazena o conteúdo processado no sessionStorage para uso posterior
+            sessionStorage.setItem('processedContent_' + trailName, finalContent);
         }
     };
     xhr.send();
 }
 
-function exibirConteudoEditavel(content) {
-    const trailContainer = document.getElementById('trailContainer');
-    trailContainer.innerHTML = '';  // Limpar qualquer conteúdo existente
-
-    // Dividir o conteúdo processado em questões
-    const questions = content.split('// question:').slice(1);
-
-    questions.forEach((questionText, index) => {
-        const questionDiv = document.createElement('div');
-        questionDiv.classList.add('question');
-
-        const title = document.createElement('h3');
-        title.innerText = `Questão ${index + 1}`;
-        questionDiv.appendChild(title);
-
-        // Exibe o texto da questão para edição
-        const textArea = document.createElement('textarea');
-        textArea.classList.add('form-control');
-        textArea.rows = 10;
-        textArea.value = questionText.trim();
-        questionDiv.appendChild(textArea);
-
-        trailContainer.appendChild(questionDiv);
-    });
-
-    // Mostra a área de edição e oculta a caixa de upload
-    $('#uploadBox').hide();
-    $('.container').show();
+// Função para recuperar o conteúdo armazenado no cache
+function getCachedContent(trailName) {
+    return sessionStorage.getItem('processedContent_' + trailName);
 }
