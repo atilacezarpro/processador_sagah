@@ -134,10 +134,16 @@ $(document).ready(function() {
       if (typeof processFiles === 'function') {
         processFiles([fileInput], 'nomeDaTrilha');  // Aqui o nome da trilha pode ser substituído ou configurado
 
-        // O conteúdo final será gerado após processar o arquivo
+        // Armazenar o conteúdo processado em localStorage
         setTimeout(function(){
           const processedContent = processedData.join('\n'); // processedData vem do processador.js
-          exibirConteudoEditavel(processedContent);
+          localStorage.setItem('processedFileContent', processedContent);  // Armazena no cache local
+          alert('Arquivo processado e armazenado em cache! Redirecionando para edição...');
+
+          // Após 5 segundos, redirecionar para a mesma página para simular um novo carregamento
+          setTimeout(function() {
+            window.location.reload();  // Simula o carregamento da página após o intervalo
+          }, 5000);
         }, 1000);
       } else {
         console.error('A função processFiles não foi definida corretamente. Verifique o script processador.js.');
@@ -145,6 +151,16 @@ $(document).ready(function() {
     };
     reader.readAsText(fileInput);
   });
+
+  // Checar se existe conteúdo processado no cache
+  const cachedContent = localStorage.getItem('processedFileContent');
+  if (cachedContent) {
+    // Exibir o conteúdo do cache na área de edição
+    exibirConteudoEditavel(cachedContent);
+
+    // Limpar o cache após a exibição
+    localStorage.removeItem('processedFileContent');
+  }
 
   function exibirConteudoEditavel(content) {
     const trailContainer = document.getElementById('trailContainer');
