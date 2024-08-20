@@ -74,27 +74,21 @@ function processModelFiles(trailName) {
                 var lines = processedData[i].split('\n');
                 var processedModelContent = modelContent.replace(/\[\d{3}\]/g, function(match) {
                     var index = parseInt(match.slice(1, 4));
-                    return lines[index - 1] ? lines[index - 1].slice(5).trim() : match; // Remove o shortcode se a linha existir e remove espaços extras
+                    return lines[index - 1] ? lines[index - 1].slice(5).trim() : match;
                 });
                 finalContent += processedModelContent + '\n';
             }
 
-            // Gera um novo documento com o texto processado
-            var fileName = 'trilha_' + trailName + '.txt';
-            baixarArquivo(finalContent, fileName);
+            // Em vez de baixar, vamos exibir o conteúdo processado na interface de edição
+            exibirConteudoEditavel(finalContent); // Função que mostra o conteúdo na interface
         }
     };
     xhr.send();
 }
 
-function baixarArquivo(content, filename) {
-    var blob = new Blob([content], { type: 'text/plain' });
-
-    // Cria um link para download do arquivo
-    var link = document.createElement('a');
-    link.href = window.URL.createObjectURL(blob);
-    link.download = filename;
-
-    // Simula um clique no link para iniciar o download
-    link.click();
+function exibirConteudoEditavel(content) {
+    // Aqui você pode ajustar o conteúdo para ser exibido na interface de edição
+    document.getElementById('trailContainer').innerText = content;  // Exibindo o conteúdo processado
+    $('#uploadBox').hide(); // Esconde a tela de upload
+    $('.container').show(); // Mostra a interface de edição
 }
