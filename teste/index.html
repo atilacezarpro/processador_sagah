@@ -304,6 +304,38 @@ $(document).ready(function() {
     return alternatives;
   }
 
+function exibirConteudoEditavel(content) {
+    // Parse o conteúdo processado e o exiba na área de edição
+
+    const trailContainer = document.getElementById('trailContainer');
+    trailContainer.innerHTML = '';  // Limpar qualquer conteúdo existente
+
+    // Aqui assumimos que o conteúdo está separado por questões
+    const questions = content.split('// question:').slice(1);
+
+    questions.forEach((questionText, index) => {
+        const questionDiv = document.createElement('div');
+        questionDiv.classList.add('question');
+
+        const title = document.createElement('h3');
+        title.innerText = `Questão ${index + 1}`;
+        questionDiv.appendChild(title);
+
+        const textArea = document.createElement('textarea');
+        textArea.classList.add('form-control');
+        textArea.value = questionText.trim(); // Exibir o conteúdo da questão para edição
+        questionDiv.appendChild(textArea);
+
+        trailContainer.appendChild(questionDiv);
+    });
+
+    // Mostra a área de edição e oculta a caixa de upload
+    $('#uploadBox').hide();
+    $('.container').show();
+}
+
+
+    
   function loadQuestionModal(questionId) {
     isModified = false;
     const question = questionsData.find(q => q.id === questionId);
