@@ -139,10 +139,9 @@
             margin-top: 20px;
             display: none; /* Oculta inicialmente */
         }
-
-	.mt-3, .my-3 {
-             margin-top: 5rem !important;
-        }
+.mt-3, .my-3 {
+    margin-top: 5rem !important;
+}
         .modal-lg {
             max-width: 90%;
         }
@@ -191,7 +190,7 @@
     <!-- Conteúdo principal -->
     <div id="outer">
         <div id="uploadBox">
-            <h2>Qual arquivo você vai editar?</h2>
+            <h2>Qual o arquivo será editado?</h2>
             <label id="fileLabel" for="fileInput">Escolher Arquivo</label>
             <input type="file" id="fileInput" accept=".txt">
             <button id="processButton">Abrir edição</button>
@@ -300,6 +299,7 @@
                             id: index + 1,
                             name: questionName,
                             trail: trail,
+                            unitNumber: unitNumber, // Adiciona o número da unidade para ordenação
                             originalText: questionText,
                             html: htmlMatch ? htmlMatch.trim() : '',
                             alternatives: alternatives
@@ -307,6 +307,9 @@
                     }
                     return null;
                 }).filter(Boolean);
+
+                // Ordenar as questões pelo número da unidade (UN)
+                questionsData.sort((a, b) => a.unitNumber - b.unitNumber);
 
                 renderQuestions();
             }
@@ -341,7 +344,7 @@
                 Object.keys(groupedByTrail).forEach(trail => {
                     const trailDiv = $('<div>').addClass('trail').append(`<h3>${trail}</h3>`);
                     const table = $('<table>').addClass('table table-bordered');
-                    const tableHead = $('<thead><tr><th>Questão</th><th>Enunciado</th><th>Ações</th></tr></thead>');
+                    const tableHead = $('<thead><tr><th>Questão/Unidade</th><th>Enunciado</th><th>Ações</th></tr></thead>');
                     const tableBody = $('<tbody></tbody>');
 
                     groupedByTrail[trail].forEach((question) => {
