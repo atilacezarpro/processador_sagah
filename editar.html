@@ -4,10 +4,10 @@
     <meta charset="UTF-8">
     <title>Editor de Questões</title>
     <link href='https://fonts.googleapis.com/css?family=Titillium+Web:400,600,300,200&subset=latin,latin-ext' rel='stylesheet' type='text/css' />
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet" type='text/css' />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet" type='text/css'/>
     <link href="https://atilacezarpro.github.io/processador_sagah/estilo.css" rel="stylesheet" type='text/css'/>
     <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+    <script src="https://cdn.tiny.cloud/1/wngoh8cdfbnclgn1ulvujvsb6dj9l76xarp1im1r3wt2zhh9/tinymce/5/tinymce.min.js" referrerpolicy="origin"></script>
 
     <style>
         /* Estilo para a página e elementos */
@@ -172,12 +172,6 @@
             justify-content: space-between;
             gap: 10px;
         }
-
-        /* Estilo para o editor Quill */
-        #editor-container {
-            height: 300px;
-            background-color: #fff;
-        }
     </style>
 </head>
 
@@ -229,8 +223,8 @@
                             <input type="text" id="questionName" class="form-control">
                         </div>
                         <div class="form-group">
-                            <label for="editor-container">Enunciado:</label>
-                            <div id="editor-container"></div>
+                            <label for="questionText">Enunciado:</label>
+                            <textarea id="questionText" class="form-control"></textarea>
                         </div>
                         <div id="alternativesContainer" class="form-group">
                             <!-- Alternativas serão adicionadas dinamicamente -->
@@ -250,12 +244,20 @@
     </div>
 
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
-    <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="https://cdn.tiny.cloud/1/wngoh8cdfbnclgn1ulvujvsb6dj9l76xarp1im1r3wt2zhh9/tinymce/5/tinymce.min.js" referrerpolicy="origin"></script>
     <script>
         $(document).ready(function() {
-            var quill = new Quill('#editor-container', {
-                theme: 'snow'
+            tinymce.init({
+                selector: '#questionText',
+                height: 300,
+                menubar: false,
+                plugins: [
+                    'advlist autolink lists link image charmap print preview anchor',
+                    'searchreplace visualblocks code fullscreen',
+                    'insertdatetime media table paste code help wordcount'
+                ],
+                toolbar: 'undo redo | formatselect | bold italic backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | help'
             });
 
             $('#processButton').on('click', function() {
@@ -279,7 +281,7 @@
             });
 
             $('#saveChanges').on('click', function() {
-                const updatedContent = quill.root.innerHTML;
+                const updatedContent = tinymce.get('questionText').getContent();
                 const blob = new Blob([updatedContent], { type: 'text/plain' });
                 const link = document.createElement('a');
                 link.href = URL.createObjectURL(blob);
