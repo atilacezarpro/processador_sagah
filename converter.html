@@ -146,9 +146,17 @@
 
         let i = 0;
         while (i < lines.length) {
-            const tituloMatch = lines[i].match(/name:\s*(.*)/);
+            const tituloMatch = lines[i].match(/name:\s*([^\$]*)/); // Corrigido para ignorar comandos e variáveis
             if (tituloMatch) {
-                const titulo = sanitize(tituloMatch[1]);
+                const rawTitulo = tituloMatch[1].trim();
+
+                // Verifica se o título contém textos indesejados como "Switch category"
+                if (rawTitulo.toLowerCase().includes("switch category")) {
+                    i++;
+                    continue; // Pula para a próxima linha
+                }
+
+                const titulo = sanitize(rawTitulo);
 
                 // Procura pela linha da questão
                 while (i < lines.length && !lines[i].includes('[html]')) i++;
@@ -224,6 +232,7 @@
         }
     });
 </script>
+
 
 
 </body>
