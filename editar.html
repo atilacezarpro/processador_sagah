@@ -185,7 +185,7 @@
     <!-- Header -->
     <div class="slide story" id="slide-1">
         <div id="logo">
-            <a href="https://atilacezarpro.github.io/processador_sagah/prof.html" target="_blank" rel="noopener noreferrer">
+            <a href="https://atilacezarpro.github.io/processador_sagah/prof.html" rel="noopener noreferrer">
                 <img src="https://lh3.googleusercontent.com/d/1KGQaLl-sprujx73w64xabe3V4_1Dvih3" alt="Logo" width="200" height="300">
             </a>
         </div>
@@ -194,7 +194,7 @@
     <!-- Conteúdo principal -->
     <div id="outer">
         <div id="uploadBox">
-            <h2>Qual o arquivo será editado?</h2>
+            <h2>Qual o arquivo</h2>
             <label id="fileLabel" for="fileInput">Escolher Arquivo</label>
             <input type="file" id="fileInput" accept=".txt">
             <button id="processButton">Abrir edição</button>
@@ -254,17 +254,17 @@
     </div>
 
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
     <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
     <script>
-        $(document).ready(function() {
+        document.addEventListener('DOMContentLoaded', function() {
             // Inicializar o Quill editor
             var quill = new Quill('#editor-container', {
                 theme: 'snow'
             });
 
-            $('#processButton').on('click', function() {
-                const fileInput = $('#fileInput')[0].files[0];
+            document.getElementById('processButton').addEventListener('click', function() {
+                const fileInput = document.getElementById('fileInput').files[0];
                 if (!fileInput) {
                     alert('Por favor, selecione um arquivo.');
                     return;
@@ -278,7 +278,7 @@
                 reader.readAsText(fileInput);
             });
 
-            $('#saveChanges').on('click', function() {
+            document.getElementById('saveChanges').addEventListener('click', function() {
                 const updatedContent = quill.root.innerHTML;
                 const blob = new Blob([updatedContent], { type: 'text/plain' });
                 const link = document.createElement('a');
