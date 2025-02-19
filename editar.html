@@ -185,7 +185,7 @@
     <!-- Header -->
     <div class="slide story" id="slide-1">
         <div id="logo">
-            <a href="https://atilacezarpro.github.io/processador_sagah/prof.html" rel="noopener noreferrer">
+            <a href="https://atilacezarpro.github.io/processador_sagah/prof.html" target="_blank" rel="noopener noreferrer">
                 <img src="https://lh3.googleusercontent.com/d/1KGQaLl-sprujx73w64xabe3V4_1Dvih3" alt="Logo" width="200" height="300">
             </a>
         </div>
@@ -194,7 +194,7 @@
     <!-- Conteúdo principal -->
     <div id="outer">
         <div id="uploadBox">
-            <h2>Qual o arquivo</h2>
+            <h2>Qual o arquivo será editado?</h2>
             <label id="fileLabel" for="fileInput">Escolher Arquivo</label>
             <input type="file" id="fileInput" accept=".txt">
             <button id="processButton">Abrir edição</button>
@@ -274,6 +274,8 @@
                 reader.onload = function(e) {
                     const content = e.target.result;
                     quill.root.innerHTML = content;
+                    // Exibe a área de edição após o carregamento
+                    document.querySelector('.container').style.display = 'block';
                 };
                 reader.readAsText(fileInput);
             });
