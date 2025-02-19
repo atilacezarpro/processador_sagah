@@ -183,7 +183,7 @@
     <!-- Header -->
     <div class="slide story" id="slide-1">
         <div id="logo">
-    <a href="https://atilacezarpro.github.io/processador_sagah/prof.html" target="_blank" rel="noopener noreferrer">
+    <a href="https://atilacezarpro.github.io/processador_sagah/prof.html" rel="noopener noreferrer">
         <img src="https://lh3.googleusercontent.com/d/1KGQaLl-sprujx73w64xabe3V4_1Dvih3" alt="Logo" width="200" height="300">
     </a>
 </div>
@@ -295,7 +295,7 @@
                     if (unitMatch) {
                         const unitNumber = parseInt(unitMatch[2], 10);
                         const trailNumber = Math.ceil(unitNumber / 5);
-                        const trail = Trilha ${trailNumber};
+                        const trail = `Trilha ${trailNumber}`;
 
                         return {
                             id: index + 1,
@@ -344,7 +344,7 @@
                 }, {});
 
                 Object.keys(groupedByTrail).forEach(trail => {
-                    const trailDiv = $('<div>').addClass('trail').append(<h3>${trail}</h3>);
+                    const trailDiv = $('<div>').addClass('trail').append(`<h3>${trail}</h3>`);
                     const table = $('<table>').addClass('table table-bordered');
                     const tableHead = $('<thead><tr><th>Questão/Unidade</th><th>Enunciado</th><th>Ações</th></tr></thead>');
                     const tableBody = $('<tbody></tbody>');
@@ -405,11 +405,11 @@
                     const altHtml = $('<textarea>').addClass('form-control my-2 question-editor').val(alt.text);
                     const feedbackHtml = $('<textarea>').addClass('form-control my-2 feedback-editor feedback').val(alt.feedback);
 
-                    const label = $('<label>').text(Alternativa ${index + 1});
-                    const feedbackLabel = $('<label>').text(Feedback - Alternativa ${index + 1});
+                    const label = $('<label>').text(`Alternativa ${index + 1}`);
+                    const feedbackLabel = $('<label>').text(`Feedback - Alternativa ${index + 1}`);
                     const selectHtml = $('<select>').addClass('form-control mb-2')
-                        .html(<option value="false"${!alt.isCorrect ? ' selected' : ''}>Incorreta</option>
-                               <option value="true"${alt.isCorrect ? ' selected' : ''}>Correta</option>)
+                        .html(`<option value="false"${!alt.isCorrect ? ' selected' : ''}>Incorreta</option>
+                               <option value="true"${alt.isCorrect ? ' selected' : ''}>Correta</option>`)
                         .addClass(alt.isCorrect ? 'correct' : 'incorrect');
 
                     const div = $('<div>').addClass('form-group').append(label, selectHtml, altHtml, feedbackLabel, feedbackHtml);
@@ -479,14 +479,14 @@
                     // Formatar alternativas corretamente
                     const updatedAlternatives = question.alternatives.map(alt => {
                         const correctSymbol = alt.isCorrect ? '=' : '~'; // GIFT format for correct/incorrect
-                        return ${correctSymbol}${alt.text}#${alt.feedback}; // Format alternatives with feedback
+                        return `${correctSymbol}${alt.text}#${alt.feedback}`; // Format alternatives with feedback
                     }).join('\n');
 
                     // Substituição correta das alternativas no texto original
                     const regexAlternatives = /([~=])([^\n#]+)#([^\n]*)/g;
                     let alternativeIndex = 0;
 
-                    updatedContent = updatedContent.replace(questionText, questionText.replace(/\[html\](.+?)\{/, [html]${updatedHtml}{).replace(regexAlternatives, function() {
+                    updatedContent = updatedContent.replace(questionText, questionText.replace(/\[html\](.+?)\{/, `[html]${updatedHtml}{`).replace(regexAlternatives, function() {
                         const updatedAlt = updatedAlternatives.split('\n')[alternativeIndex++];
                         return updatedAlt ? updatedAlt : match;
                     }));
