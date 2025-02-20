@@ -20,7 +20,7 @@
         }
         video, canvas {
             width: 100%;
-            max-width: 500px;
+            max-width: 800px;
             margin: 10px auto;
             border: 1px solid #ccc;
         }
@@ -31,13 +31,13 @@
 
     <div id="step1">
         <h2>Passo 1: Capture o Cartão Gabarito</h2>
-        <video id="video" autoplay></video>
+        <video id="video" autoplay playsinline></video>
         <button id="captureGabarito">Capturar Gabarito</button>
     </div>
 
     <div id="step2" class="hidden">
         <h2>Passo 2: Capture o Cartão do Aluno</h2>
-        <video id="video2" autoplay></video>
+        <video id="video2" autoplay playsinline></video>
         <button id="captureResposta">Capturar Resposta</button>
     </div>
 
@@ -66,14 +66,12 @@
             startCamera(video);
         }
 
-        // Verificar se OpenCV está carregado antes de iniciar
         if (typeof cv !== 'undefined') {
             onOpenCvReady();
         } else {
             document.addEventListener('opencv_ready', onOpenCvReady);
         }
 
-        // Função para iniciar a câmera traseira
         function startCamera(videoElement) {
             navigator.mediaDevices.getUserMedia({ video: { facingMode: { exact: "environment" } } })
                 .then(stream => {
@@ -85,7 +83,6 @@
                 });
         }
 
-        // Função para capturar imagem
         function captureImage(videoElement) {
             canvas.width = videoElement.videoWidth;
             canvas.height = videoElement.videoHeight;
@@ -93,10 +90,10 @@
             return canvas.toDataURL('image/png');
         }
 
-        // Função para encontrar as marcas de referência e aplicar transformação
         function detectarMarcasETransformar(src) {
             let gray = new cv.Mat();
             cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
+            cv.GaussianBlur(gray, gray, new cv.Size(5, 5), 0);
             cv.threshold(gray, gray, 50, 255, cv.THRESH_BINARY);
 
             let contours = new cv.MatVector();
@@ -110,8 +107,7 @@
                 let rect = cv.boundingRect(cnt);
                 let area = rect.width * rect.height;
 
-                // Assumimos que as marcas são quadradas e grandes
-                if (area > 500 && Math.abs(rect.width - rect.height) < 10) {
+                if (area > 300 && Math.abs(rect.width - rect.height) < 20) {
                     pontos.push({ x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 });
                 }
                 cnt.delete();
@@ -121,12 +117,11 @@
             hierarchy.delete();
             gray.delete();
 
-            if (pontos.length !== 4) {
+            if (pontos.length < 4) {
                 alert("Não foi possível detectar todas as marcas de referência.");
                 return null;
             }
 
-            // Ordenar pontos (top-left, top-right, bottom-right, bottom-left)
             pontos.sort((a, b) => a.y - b.y);
             let top = pontos.slice(0, 2).sort((a, b) => a.x - b.x);
             let bottom = pontos.slice(2, 4).sort((a, b) => a.x - b.x);
@@ -156,7 +151,6 @@
             return dst;
         }
 
-        // Analisar imagem usando OpenCV.js para detectar bolhas preenchidas
         function analisarImagem(imgData, callback, draw = false) {
             let img = new Image();
             img.src = imgData;
