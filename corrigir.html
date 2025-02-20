@@ -157,6 +157,23 @@
             return canvas.toDataURL('image/png');
         }
 
+        function processarImagemResposta(imgData) {
+            let img = new Image();
+            img.src = imgData;
+            img.onload = () => {
+                canvasResultado.width = img.width;
+                canvasResultado.height = img.height;
+                ctxResultado.drawImage(img, 0, 0);
+
+                // Simulação de processamento (adapte conforme necessário)
+                ctxResultado.strokeStyle = 'red';
+                ctxResultado.lineWidth = 5;
+                ctxResultado.strokeRect(50, 50, img.width - 100, img.height - 100);
+
+                document.getElementById('resultadoTexto').innerText = `Processamento concluído. Resultados exibidos acima.`;
+            };
+        }
+
         document.getElementById('captureGabarito').addEventListener('click', () => {
             let imgData = captureImage(video);
             alert('Gabarito capturado com sucesso! Agora capture o cartão do aluno.');
@@ -170,7 +187,7 @@
             alert('Resposta capturada com sucesso! Processando...');
             document.getElementById('step2').classList.add('hidden');
             document.getElementById('result').classList.remove('hidden');
-            document.getElementById('resultadoTexto').innerText = `Processamento concluído.`;
+            processarImagemResposta(imgData);
         });
 
         document.getElementById('corrigirOutro').addEventListener('click', function() {
