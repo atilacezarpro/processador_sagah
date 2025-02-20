@@ -44,6 +44,7 @@
     <div id="result" class="hidden">
         <h2>Resultado</h2>
         <p id="resultadoTexto"></p>
+        <canvas id="canvasResultado"></canvas>
         <button id="corrigirOutro">Corrigir Outro Cartão</button>
         <button id="reiniciar">Corrigir Outra Prova</button>
     </div>
@@ -56,7 +57,9 @@
         let video = document.getElementById('video');
         let video2 = document.getElementById('video2');
         let canvas = document.getElementById('canvas');
+        let canvasResultado = document.getElementById('canvasResultado');
         let ctx = canvas.getContext('2d');
+        let ctxResultado = canvasResultado.getContext('2d');
 
         function onOpenCvReady() {
             console.log("OpenCV.js carregado com sucesso.");
@@ -91,7 +94,7 @@
         }
 
         // Analisar imagem usando OpenCV.js para detectar bolhas preenchidas
-        function analisarImagem(imgData, callback) {
+        function analisarImagem(imgData, callback, draw = false) {
             let img = new Image();
             img.src = imgData;
             img.onload = () => {
@@ -113,6 +116,13 @@
                     let alternativas = ['A', 'B', 'C', 'D', 'E'];
                     let respostasPorQuestao = Array.from({ length: 20 }, () => []);
 
+                    // Preparar canvasResultado para desenhar
+                    if (draw) {
+                        canvasResultado.width = canvas.width;
+                        canvasResultado.height = canvas.height;
+                        ctxResultado.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    }
+
                     for (let i = 0; i < contours.size(); i++) {
                         let cnt = contours.get(i);
                         let rect = cv.boundingRect(cnt);
@@ -128,7 +138,16 @@
 
                             if (questao >= 0 && questao < 20 && alternativaIndex >= 0 && alternativaIndex < 5) {
                                 let area = rect.width * rect.height;
-                                respostasPorQuestao[questao].push({ alternativa: alternativas[alternativaIndex], area });
+                                respostasPorQuestao[questao].push({ alternativa: alternativas[alternativaIndex], area, cx, cy });
+
+                                // Desenhar contorno
+                                if (draw) {
+                                    ctxResultado.beginPath();
+                                    ctxResultado.arc(cx, cy, rect.width / 2, 0, 2 * Math.PI);
+                                    ctxResultado.strokeStyle = 'blue';
+                                    ctxResultado.lineWidth = 2;
+                                    ctxResultado.stroke();
+                                }
                             }
                         }
                         cnt.delete();
@@ -139,6 +158,15 @@
                         if (opcoes.length > 0) {
                             opcoes.sort((a, b) => b.area - a.area);
                             respostas[idx] = opcoes[0].alternativa;
+
+                            // Marcar acertos e erros
+                            if (draw) {
+                                ctxResultado.beginPath();
+                                ctxResultado.arc(opcoes[0].cx, opcoes[0].cy, 10, 0, 2 * Math.PI);
+                                ctxResultado.strokeStyle = (respostas[idx] === gabarito[idx]) ? 'green' : 'red';
+                                ctxResultado.lineWidth = 3;
+                                ctxResultado.stroke();
+                            }
                         }
                     });
 
@@ -170,7 +198,7 @@
 
         document.getElementById('captureResposta').addEventListener('click', () => {
             let imgData = captureImage(video2);
-            analisarImagem(imgData, (respostasAluno) => {
+            analisarImagem(imgData, (respostasAluno, draw = true) => {
                 let acertos = 0;
                 let erros = 0;
 
@@ -185,7 +213,7 @@
                 document.getElementById('step2').classList.add('hidden');
                 document.getElementById('result').classList.remove('hidden');
                 document.getElementById('resultadoTexto').innerText = `Acertos: ${acertos}\nErros: ${erros}`;
-            });
+            }, true);
         });
 
         document.getElementById('corrigirOutro').addEventListener('click', function() {
