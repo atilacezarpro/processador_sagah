@@ -1,1 +1,282 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Correção de Cartão-Resposta</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 20px;
+        }
+        .hidden {
+            display: none;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 10px;
+            font-size: 16px;
+        }
+        #videoContainer {
+            position: relative;
+            display: inline-block;
+        }
+        video, canvas {
+            width: 100%;
+            max-width: 800px;
+            border: 1px solid #ccc;
+        }
+        #overlayCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Correção de Cartão-Resposta</h1>
 
+    <div id="step1">
+        <h2>Passo 1: Capture o Cartão Gabarito</h2>
+        <div id="videoContainer">
+            <video id="video" autoplay playsinline></video>
+            <canvas id="overlayCanvas"></canvas>
+        </div>
+        <button id="captureGabarito">Capturar Gabarito</button>
+    </div>
+
+    <div id="step2" class="hidden">
+        <h2>Passo 2: Capture o Cartão do Aluno</h2>
+        <video id="video2" autoplay playsinline></video>
+        <button id="captureResposta">Capturar Resposta</button>
+    </div>
+
+    <div id="result" class="hidden">
+        <h2>Resultado</h2>
+        <p id="resultadoTexto"></p>
+        <canvas id="canvasResultado"></canvas>
+        <button id="corrigirOutro">Corrigir Outro Cartão</button>
+        <button id="reiniciar">Corrigir Outra Prova</button>
+    </div>
+
+    <canvas id="canvas" class="hidden"></canvas>
+
+    <script src="https://docs.opencv.org/4.5.2/opencv.js"></script>
+    <script>
+        let gabarito = [];
+        let video = document.getElementById('video');
+        let video2 = document.getElementById('video2');
+        let canvas = document.getElementById('canvas');
+        let canvasResultado = document.getElementById('canvasResultado');
+        let overlayCanvas = document.getElementById('overlayCanvas');
+        let ctx = canvas.getContext('2d');
+        let ctxResultado = canvasResultado.getContext('2d');
+        let ctxOverlay = overlayCanvas.getContext('2d');
+
+        function onOpenCvReady() {
+            console.log("OpenCV.js carregado com sucesso.");
+            startCamera(video);
+            requestAnimationFrame(detectarMarcasAoVivo);
+        }
+
+        if (typeof cv !== 'undefined') {
+            onOpenCvReady();
+        } else {
+            document.addEventListener('opencv_ready', onOpenCvReady);
+        }
+
+        function startCamera(videoElement) {
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: { exact: "environment" } } })
+                .then(stream => {
+                    videoElement.srcObject = stream;
+                })
+                .catch(err => {
+                    console.error("Erro ao acessar a câmera traseira: ", err);
+                    alert("Não foi possível acessar a câmera traseira. Verifique as permissões.");
+                });
+        }
+
+        function detectarMarcasAoVivo() {
+            overlayCanvas.width = video.videoWidth;
+            overlayCanvas.height = video.videoHeight;
+            ctxOverlay.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+
+            if (video.videoWidth > 0 && video.videoHeight > 0) {
+                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                let src = cv.imread(canvas);
+                let gray = new cv.Mat();
+                cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
+                cv.GaussianBlur(gray, gray, new cv.Size(5, 5), 0);
+                cv.threshold(gray, gray, 50, 255, cv.THRESH_BINARY);
+
+                let contours = new cv.MatVector();
+                let hierarchy = new cv.Mat();
+                cv.findContours(gray, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
+
+                for (let i = 0; i < contours.size(); i++) {
+                    let cnt = contours.get(i);
+                    let rect = cv.boundingRect(cnt);
+                    let area = rect.width * rect.height;
+
+                    // Filtrar marcas baseadas em tamanho e proporção
+                    if (area > 500 && area < 5000 && Math.abs(rect.width - rect.height) < 10) {
+                        let cx = rect.x + rect.width / 2;
+                        let cy = rect.y + rect.height / 2;
+                        ctxOverlay.beginPath();
+                        ctxOverlay.arc(cx, cy, 10, 0, 2 * Math.PI);
+                        ctxOverlay.strokeStyle = 'lime';
+                        ctxOverlay.lineWidth = 3;
+                        ctxOverlay.stroke();
+                    }
+                    cnt.delete();
+                }
+
+                src.delete();
+                gray.delete();
+                contours.delete();
+                hierarchy.delete();
+            }
+            requestAnimationFrame(detectarMarcasAoVivo);
+        }
+
+        function captureImage(videoElement) {
+            canvas.width = videoElement.videoWidth;
+            canvas.height = videoElement.videoHeight;
+            ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+            return canvas.toDataURL('image/png');
+        }
+
+        function analisarImagem(imgData, callback, draw = false) {
+            let img = new Image();
+            img.src = imgData;
+            img.onload = () => {
+                try {
+                    let src = cv.imread(img);
+                    let gray = new cv.Mat();
+                    cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
+                    cv.adaptiveThreshold(gray, gray, 255, cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY_INV, 11, 2);
+
+                    let contours = new cv.MatVector();
+                    let hierarchy = new cv.Mat();
+                    cv.findContours(gray, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
+
+                    let respostas = Array(20).fill('');
+                    let alternativas = ['A', 'B', 'C', 'D', 'E'];
+                    let respostasPorQuestao = Array.from({ length: 20 }, () => []);
+
+                    if (draw) {
+                        canvasResultado.width = src.cols;
+                        canvasResultado.height = src.rows;
+                        ctxResultado.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    }
+
+                    for (let i = 0; i < contours.size(); i++) {
+                        let cnt = contours.get(i);
+                        let rect = cv.boundingRect(cnt);
+
+                        // Filtrar bolhas por tamanho e aspecto
+                        if (rect.width > 20 && rect.width < 60 && rect.height > 20 && rect.height < 60 && Math.abs(rect.width - rect.height) < 10) {
+                            let cx = rect.x + rect.width / 2;
+                            let cy = rect.y + rect.height / 2;
+
+                            let questao = Math.floor(cy / (src.rows / 20));
+                            let alternativaIndex = Math.floor(cx / (src.cols / 5));
+
+                            if (questao >= 0 && questao < 20 && alternativaIndex >= 0 && alternativaIndex < 5) {
+                                let area = rect.width * rect.height;
+                                let mask = new cv.Mat.zeros(rect.height, rect.width, cv.CV_8UC1);
+                                cv.drawContours(mask, new cv.MatVector(cnt), -1, new cv.Scalar(255), cv.FILLED, 8, hierarchy, 0, new cv.Point(-rect.x, -rect.y));
+                                let nonZero = cv.countNonZero(mask);
+                                let fillRatio = nonZero / area;
+                                mask.delete();
+
+                                // Considerar a bolha marcada se o preenchimento for maior que 50%
+                                if (fillRatio > 0.5) {
+                                    respostasPorQuestao[questao].push({ alternativa: alternativas[alternativaIndex], area, cx, cy });
+
+                                    if (draw) {
+                                        ctxResultado.beginPath();
+                                        ctxResultado.arc(cx, cy, rect.width / 2, 0, 2 * Math.PI);
+                                        ctxResultado.strokeStyle = 'blue';
+                                        ctxResultado.lineWidth = 2;
+                                        ctxResultado.stroke();
+                                    }
+                                }
+                            }
+                        }
+                        cnt.delete();
+                    }
+
+                    respostasPorQuestao.forEach((opcoes, idx) => {
+                        if (opcoes.length > 0) {
+                            respostas[idx] = opcoes[0].alternativa;
+
+                            if (draw) {
+                                ctxResultado.beginPath();
+                                ctxResultado.arc(opcoes[0].cx, opcoes[0].cy, 10, 0, 2 * Math.PI);
+                                ctxResultado.strokeStyle = (respostas[idx] === gabarito[idx]) ? 'green' : 'red';
+                                ctxResultado.lineWidth = 3;
+                                ctxResultado.stroke();
+                            }
+                        }
+                    });
+
+                    src.delete();
+                    gray.delete();
+                    contours.delete();
+                    hierarchy.delete();
+
+                    callback(respostas);
+                } catch (error) {
+                    console.error("Erro ao processar a imagem:", error);
+                    alert("Ocorreu um erro ao analisar a imagem. Verifique se o cartão está bem enquadrado e iluminado.");
+                }
+            };
+        }
+
+        document.getElementById('captureGabarito').addEventListener('click', () => {
+            let imgData = captureImage(video);
+            analisarImagem(imgData, (respostas) => {
+                gabarito = respostas;
+                alert('Gabarito capturado com sucesso! Agora capture o cartão do aluno.');
+                document.getElementById('step1').classList.add('hidden');
+                document.getElementById('step2').classList.remove('hidden');
+                startCamera(video2);
+            });
+        });
+
+        document.getElementById('captureResposta').addEventListener('click', () => {
+            let imgData = captureImage(video2);
+            analisarImagem(imgData, (respostasAluno, draw = true) => {
+                let acertos = 0;
+                let erros = 0;
+
+                for (let i = 0; i < 20; i++) {
+                    if (respostasAluno[i] === gabarito[i]) {
+                        acertos++;
+                    } else {
+                        erros++;
+                    }
+                }
+
+                document.getElementById('step2').classList.add('hidden');
+                document.getElementById('result').classList.remove('hidden');
+                document.getElementById('resultadoTexto').innerText = `Acertos: ${acertos}\nErros: ${erros}`;
+            }, true);
+        });
+
+        document.getElementById('corrigirOutro').addEventListener('click', function() {
+            document.getElementById('result').classList.add('hidden');
+            document.getElementById('step2').classList.remove('hidden');
+            startCamera(video2);
+        });
+
+        document.getElementById('reiniciar').addEventListener('click', function() {
+            document.getElementById('result').classList.add('hidden');
+            document.getElementById('step1').classList.remove('hidden');
+            startCamera(video);
+        });
+    </script>
+</body>
+</html>
