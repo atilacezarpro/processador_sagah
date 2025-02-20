@@ -86,11 +86,11 @@
             document.addEventListener('opencv_ready', onOpenCvReady);
         }
 
-        function startCamera(videoElement) {
+        function startCamera(videoElement, enableFlash = true) {
             navigator.mediaDevices.getUserMedia({
                 video: {
                     facingMode: { exact: "environment" },
-                    torch: true // Ativa o flash
+                    torch: enableFlash // Controla o flash
                 }
             })
             .then(stream => {
@@ -98,7 +98,7 @@
                 const track = stream.getVideoTracks()[0];
                 const imageCapture = new ImageCapture(track);
                 imageCapture.getPhotoCapabilities().then(() => {
-                    track.applyConstraints({ advanced: [{ torch: true }] });
+                    track.applyConstraints({ advanced: [{ torch: enableFlash }] });
                 });
             })
             .catch(err => {
@@ -165,12 +165,52 @@
                 canvasResultado.height = img.height;
                 ctxResultado.drawImage(img, 0, 0);
 
-                // Simulação de processamento (adapte conforme necessário)
-                ctxResultado.strokeStyle = 'red';
-                ctxResultado.lineWidth = 5;
-                ctxResultado.strokeRect(50, 50, img.width - 100, img.height - 100);
+                let src = cv.imread(canvasResultado);
+                let gray = new cv.Mat();
+                cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
+                cv.GaussianBlur(gray, gray, new cv.Size(5, 5), 0);
+                cv.threshold(gray, gray, 50, 255, cv.THRESH_BINARY);
 
-                document.getElementById('resultadoTexto').innerText = `Processamento concluído. Resultados exibidos acima.`;
+                let contours = new cv.MatVector();
+                let hierarchy = new cv.Mat();
+                cv.findContours(gray, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
+
+                let acertos = 0;
+                let erros = 0;
+
+                for (let i = 0; i < contours.size(); i++) {
+                    let cnt = contours.get(i);
+                    let rect = cv.boundingRect(cnt);
+                    let area = rect.width * rect.height;
+
+                    if (area > 500 && area < 5000 && Math.abs(rect.width - rect.height) < 10) {
+                        let cx = rect.x + rect.width / 2;
+                        let cy = rect.y + rect.height / 2;
+
+                        // Simulação de verificação de acerto
+                        let isCorrect = Math.random() > 0.5;
+
+                        ctxResultado.beginPath();
+                        ctxResultado.arc(cx, cy, 10, 0, 2 * Math.PI);
+                        ctxResultado.strokeStyle = isCorrect ? 'green' : 'red';
+                        ctxResultado.lineWidth = 3;
+                        ctxResultado.stroke();
+
+                        if (isCorrect) {
+                            acertos++;
+                        } else {
+                            erros++;
+                        }
+                    }
+                    cnt.delete();
+                }
+
+                src.delete();
+                gray.delete();
+                contours.delete();
+                hierarchy.delete();
+
+                document.getElementById('resultadoTexto').innerText = `Acertos: ${acertos} | Erros: ${erros}`;
             };
         }
 
@@ -187,6 +227,7 @@
             alert('Resposta capturada com sucesso! Processando...');
             document.getElementById('step2').classList.add('hidden');
             document.getElementById('result').classList.remove('hidden');
+            startCamera(video2, false); // Desativa o flash durante o resultado
             processarImagemResposta(imgData);
         });
 
