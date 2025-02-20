@@ -58,6 +58,18 @@
         let canvas = document.getElementById('canvas');
         let ctx = canvas.getContext('2d');
 
+        function onOpenCvReady() {
+            console.log("OpenCV.js carregado com sucesso.");
+            startCamera(video);
+        }
+
+        // Verificar se OpenCV está carregado antes de iniciar
+        if (typeof cv !== 'undefined') {
+            onOpenCvReady();
+        } else {
+            document.addEventListener('opencv_ready', onOpenCvReady);
+        }
+
         // Função para iniciar a câmera traseira
         function startCamera(videoElement) {
             navigator.mediaDevices.getUserMedia({ video: { facingMode: { exact: "environment" } } })
@@ -66,6 +78,7 @@
                 })
                 .catch(err => {
                     console.error("Erro ao acessar a câmera traseira: ", err);
+                    alert("Não foi possível acessar a câmera traseira. Verifique as permissões.");
                 });
         }
 
@@ -82,55 +95,67 @@
             let img = new Image();
             img.src = imgData;
             img.onload = () => {
-                let src = cv.imread(img);
-                let gray = new cv.Mat();
-                let thresh = new cv.Mat();
+                try {
+                    let src = cv.imread(img);
+                    let gray = new cv.Mat();
+                    let thresh = new cv.Mat();
 
-                // Conversão para escala de cinza e binarização
-                cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
-                cv.threshold(gray, thresh, 150, 255, cv.THRESH_BINARY_INV);
+                    // Conversão para escala de cinza e binarização adaptativa
+                    cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
+                    cv.adaptiveThreshold(gray, thresh, 255, cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY_INV, 11, 2);
 
-                // Detecção de contornos
-                let contours = new cv.MatVector();
-                let hierarchy = new cv.Mat();
-                cv.findContours(thresh, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
+                    // Detecção de contornos
+                    let contours = new cv.MatVector();
+                    let hierarchy = new cv.Mat();
+                    cv.findContours(thresh, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
 
-                let respostas = Array(20).fill('');
-                let alternativas = ['A', 'B', 'C', 'D', 'E'];
+                    let respostas = Array(20).fill('');
+                    let alternativas = ['A', 'B', 'C', 'D', 'E'];
+                    let respostasPorQuestao = Array.from({ length: 20 }, () => []);
 
-                for (let i = 0; i < contours.size(); i++) {
-                    let cnt = contours.get(i);
-                    let rect = cv.boundingRect(cnt);
+                    for (let i = 0; i < contours.size(); i++) {
+                        let cnt = contours.get(i);
+                        let rect = cv.boundingRect(cnt);
 
-                    // Filtrar contornos pelo tamanho esperado das bolhas
-                    if (rect.width > 15 && rect.width < 40 && rect.height > 15 && rect.height < 40) {
-                        let cx = rect.x + rect.width / 2;
-                        let cy = rect.y + rect.height / 2;
+                        // Filtrar contornos pelo tamanho esperado das bolhas
+                        if (rect.width > 15 && rect.width < 40 && rect.height > 15 && rect.height < 40) {
+                            let cx = rect.x + rect.width / 2;
+                            let cy = rect.y + rect.height / 2;
 
-                        // Determinar qual questão e alternativa com base na posição
-                        let questao = Math.floor((cy - 100) / 50);
-                        let alternativaIndex = Math.floor((cx - 50) / 50);
+                            // Determinar qual questão e alternativa com base na posição
+                            let questao = Math.floor((cy - 100) / 50);
+                            let alternativaIndex = Math.floor((cx - 50) / 50);
 
-                        if (questao >= 0 && questao < 20 && alternativaIndex >= 0 && alternativaIndex < 5) {
-                            respostas[questao] = alternativas[alternativaIndex];
+                            if (questao >= 0 && questao < 20 && alternativaIndex >= 0 && alternativaIndex < 5) {
+                                let area = rect.width * rect.height;
+                                respostasPorQuestao[questao].push({ alternativa: alternativas[alternativaIndex], area });
+                            }
                         }
+                        cnt.delete();
                     }
-                    cnt.delete();
+
+                    // Selecionar a bolha mais preenchida por questão
+                    respostasPorQuestao.forEach((opcoes, idx) => {
+                        if (opcoes.length > 0) {
+                            opcoes.sort((a, b) => b.area - a.area);
+                            respostas[idx] = opcoes[0].alternativa;
+                        }
+                    });
+
+                    // Limpeza
+                    src.delete();
+                    gray.delete();
+                    thresh.delete();
+                    contours.delete();
+                    hierarchy.delete();
+
+                    callback(respostas);
+                } catch (error) {
+                    console.error("Erro ao processar a imagem:", error);
+                    alert("Ocorreu um erro ao analisar a imagem. Verifique se o cartão está bem enquadrado e iluminado.");
                 }
-
-                // Limpeza
-                src.delete();
-                gray.delete();
-                thresh.delete();
-                contours.delete();
-                hierarchy.delete();
-
-                callback(respostas);
             };
         }
-
-        // Iniciar câmera traseira para gabarito
-        startCamera(video);
 
         document.getElementById('captureGabarito').addEventListener('click', () => {
             let imgData = captureImage(video);
