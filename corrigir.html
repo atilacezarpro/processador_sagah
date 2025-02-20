@@ -18,32 +18,27 @@
             margin: 10px;
             font-size: 16px;
         }
-        input[type="file"] {
-            display: none;
-        }
-        label {
-            display: inline-block;
-            padding: 10px 20px;
-            background-color: #4CAF50;
-            color: white;
-            cursor: pointer;
-            border-radius: 5px;
+        video, canvas {
+            width: 100%;
+            max-width: 500px;
+            margin: 10px auto;
+            border: 1px solid #ccc;
         }
     </style>
 </head>
 <body>
     <h1>Correção de Cartão-Resposta</h1>
-    
+
     <div id="step1">
-        <h2>Passo 1: Envie o Cartão Gabarito</h2>
-        <label for="gabaritoInput">Escolher Imagem do Gabarito</label>
-        <input type="file" id="gabaritoInput" accept="image/*">
+        <h2>Passo 1: Capture o Cartão Gabarito</h2>
+        <video id="video" autoplay></video>
+        <button id="captureGabarito">Capturar Gabarito</button>
     </div>
 
     <div id="step2" class="hidden">
-        <h2>Passo 2: Envie o Cartão do Aluno</h2>
-        <label for="respostaInput">Escolher Imagem do Cartão do Aluno</label>
-        <input type="file" id="respostaInput" accept="image/*">
+        <h2>Passo 2: Capture o Cartão do Aluno</h2>
+        <video id="video2" autoplay></video>
+        <button id="captureResposta">Capturar Resposta</button>
     </div>
 
     <div id="result" class="hidden">
@@ -53,31 +48,104 @@
         <button id="reiniciar">Corrigir Outra Prova</button>
     </div>
 
+    <canvas id="canvas" class="hidden"></canvas>
+
+    <script src="https://docs.opencv.org/4.5.2/opencv.js"></script>
     <script>
         let gabarito = [];
+        let video = document.getElementById('video');
+        let video2 = document.getElementById('video2');
+        let canvas = document.getElementById('canvas');
+        let ctx = canvas.getContext('2d');
 
-        document.getElementById('gabaritoInput').addEventListener('change', function(event) {
-            const file = event.target.files[0];
-            if (file) {
-                alert('Imagem do gabarito carregada. Agora envie o cartão do aluno.');
+        // Função para iniciar a câmera
+        function startCamera(videoElement) {
+            navigator.mediaDevices.getUserMedia({ video: true })
+                .then(stream => {
+                    videoElement.srcObject = stream;
+                })
+                .catch(err => {
+                    console.error("Erro ao acessar a câmera: ", err);
+                });
+        }
+
+        // Função para capturar imagem
+        function captureImage(videoElement) {
+            canvas.width = videoElement.videoWidth;
+            canvas.height = videoElement.videoHeight;
+            ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+            return canvas.toDataURL('image/png');
+        }
+
+        // Analisar imagem usando OpenCV.js para detectar bolhas preenchidas
+        function analisarImagem(imgData, callback) {
+            let img = new Image();
+            img.src = imgData;
+            img.onload = () => {
+                let src = cv.imread(img);
+                let gray = new cv.Mat();
+                let thresh = new cv.Mat();
+
+                // Conversão para escala de cinza e binarização
+                cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
+                cv.threshold(gray, thresh, 150, 255, cv.THRESH_BINARY_INV);
+
+                // Detecção de contornos
+                let contours = new cv.MatVector();
+                let hierarchy = new cv.Mat();
+                cv.findContours(thresh, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
+
+                let respostas = Array(20).fill('');
+                let alternativas = ['A', 'B', 'C', 'D', 'E'];
+
+                for (let i = 0; i < contours.size(); i++) {
+                    let cnt = contours.get(i);
+                    let rect = cv.boundingRect(cnt);
+
+                    // Filtrar contornos pelo tamanho esperado das bolhas
+                    if (rect.width > 15 && rect.width < 40 && rect.height > 15 && rect.height < 40) {
+                        let cx = rect.x + rect.width / 2;
+                        let cy = rect.y + rect.height / 2;
+
+                        // Determinar qual questão e alternativa com base na posição
+                        let questao = Math.floor((cy - 100) / 50);
+                        let alternativaIndex = Math.floor((cx - 50) / 50);
+
+                        if (questao >= 0 && questao < 20 && alternativaIndex >= 0 && alternativaIndex < 5) {
+                            respostas[questao] = alternativas[alternativaIndex];
+                        }
+                    }
+                    cnt.delete();
+                }
+
+                // Limpeza
+                src.delete();
+                gray.delete();
+                thresh.delete();
+                contours.delete();
+                hierarchy.delete();
+
+                callback(respostas);
+            };
+        }
+
+        // Iniciar câmera para gabarito
+        startCamera(video);
+
+        document.getElementById('captureGabarito').addEventListener('click', () => {
+            let imgData = captureImage(video);
+            analisarImagem(imgData, (respostas) => {
+                gabarito = respostas;
+                alert('Gabarito capturado com sucesso! Agora capture o cartão do aluno.');
                 document.getElementById('step1').classList.add('hidden');
                 document.getElementById('step2').classList.remove('hidden');
-
-                // Aqui você pode implementar a lógica de leitura do cartão gabarito
-                // Por enquanto, vamos simular um gabarito
-                gabarito = Array.from({ length: 20 }, () => String.fromCharCode(65 + Math.floor(Math.random() * 5)));
-                console.log('Gabarito:', gabarito);
-            }
+                startCamera(video2);
+            });
         });
 
-        document.getElementById('respostaInput').addEventListener('change', function(event) {
-            const file = event.target.files[0];
-            if (file) {
-                // Aqui você pode implementar a lógica de leitura do cartão do aluno
-                // Vamos simular respostas aleatórias
-                const respostasAluno = Array.from({ length: 20 }, () => String.fromCharCode(65 + Math.floor(Math.random() * 5)));
-                console.log('Respostas do Aluno:', respostasAluno);
-
+        document.getElementById('captureResposta').addEventListener('click', () => {
+            let imgData = captureImage(video2);
+            analisarImagem(imgData, (respostasAluno) => {
                 let acertos = 0;
                 let erros = 0;
 
@@ -92,17 +160,19 @@
                 document.getElementById('step2').classList.add('hidden');
                 document.getElementById('result').classList.remove('hidden');
                 document.getElementById('resultadoTexto').innerText = `Acertos: ${acertos}\nErros: ${erros}`;
-            }
+            });
         });
 
         document.getElementById('corrigirOutro').addEventListener('click', function() {
             document.getElementById('result').classList.add('hidden');
             document.getElementById('step2').classList.remove('hidden');
+            startCamera(video2);
         });
 
         document.getElementById('reiniciar').addEventListener('click', function() {
             document.getElementById('result').classList.add('hidden');
             document.getElementById('step1').classList.remove('hidden');
+            startCamera(video);
         });
     </script>
 </body>
