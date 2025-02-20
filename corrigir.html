@@ -168,6 +168,25 @@
             return canvas.toDataURL('image/png');
         }
 
+        function processarImagemResposta(imgData) {
+            let img = new Image();
+            img.src = imgData;
+            img.onload = () => {
+                canvasResultado.width = img.width;
+                canvasResultado.height = img.height;
+                ctxResultado.drawImage(img, 0, 0);
+                ctxResultado.font = "20px Arial";
+                ctxResultado.fillStyle = "blue";
+                ctxResultado.fillText("Processando...", 10, 30);
+
+                // Simulação de contagem de acertos e erros
+                let acertos = Math.floor(Math.random() * 21);
+                let erros = 20 - acertos;
+
+                document.getElementById('resultadoTexto').innerText = `Acertos: ${acertos} | Erros: ${erros}`;
+            };
+        }
+
         document.getElementById('captureGabarito').addEventListener('click', () => {
             isCapturingGabarito = true;
             let imgData = captureImage(video);
