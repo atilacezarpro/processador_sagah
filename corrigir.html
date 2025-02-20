@@ -44,12 +44,14 @@
             <canvas id="overlayCanvas"></canvas>
         </div>
         <button id="captureGabarito">Capturar Gabarito</button>
+        <p id="marcadoresGabarito">Marcadores detectados: 0</p>
     </div>
 
     <div id="step2" class="hidden">
         <h2>Passo 2: Capture o Cartão do Aluno</h2>
         <video id="video2" autoplay playsinline></video>
         <button id="captureResposta">Capturar Resposta</button>
+        <p id="marcadoresAluno">Marcadores detectados: 0</p>
     </div>
 
     <div id="result" class="hidden">
@@ -73,6 +75,7 @@
         let ctx = canvas.getContext('2d');
         let ctxResultado = canvasResultado.getContext('2d');
         let ctxOverlay = overlayCanvas.getContext('2d');
+        let isCapturingGabarito = true;
 
         function onOpenCvReady() {
             console.log("OpenCV.js carregado com sucesso.");
@@ -124,6 +127,8 @@
                 let hierarchy = new cv.Mat();
                 cv.findContours(gray, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
 
+                let marcadoresDetectados = 0;
+
                 for (let i = 0; i < contours.size(); i++) {
                     let cnt = contours.get(i);
                     let rect = cv.boundingRect(cnt);
@@ -137,8 +142,15 @@
                         ctxOverlay.strokeStyle = 'lime';
                         ctxOverlay.lineWidth = 3;
                         ctxOverlay.stroke();
+                        marcadoresDetectados++;
                     }
                     cnt.delete();
+                }
+
+                if (isCapturingGabarito) {
+                    document.getElementById('marcadoresGabarito').innerText = `Marcadores detectados: ${marcadoresDetectados}`;
+                } else {
+                    document.getElementById('marcadoresAluno').innerText = `Marcadores detectados: ${marcadoresDetectados}`;
                 }
 
                 src.delete();
@@ -156,71 +168,8 @@
             return canvas.toDataURL('image/png');
         }
 
-        function processarImagemResposta(imgData) {
-            let img = new Image();
-            img.src = imgData;
-            img.onload = () => {
-                canvasResultado.width = img.width;
-                canvasResultado.height = img.height;
-                ctxResultado.drawImage(img, 0, 0);
-
-                let src = cv.imread(canvasResultado);
-                let gray = new cv.Mat();
-                cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
-                cv.GaussianBlur(gray, gray, new cv.Size(5, 5), 0);
-                cv.adaptiveThreshold(gray, gray, 255, cv.ADAPTIVE_THRESH_MEAN_C, cv.THRESH_BINARY_INV, 11, 2);
-
-                let contours = new cv.MatVector();
-                let hierarchy = new cv.Mat();
-                cv.findContours(gray, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
-
-                let acertos = 0;
-                let erros = 0;
-
-                for (let i = 0; i < contours.size(); i++) {
-                    let cnt = contours.get(i);
-                    let rect = cv.boundingRect(cnt);
-                    let area = rect.width * rect.height;
-
-                    if (area > 1000 && area < 10000 && Math.abs(rect.width - rect.height) < 10) {
-                        let cx = rect.x + rect.width / 2;
-                        let cy = rect.y + rect.height / 2;
-
-                        let fillMask = new cv.Mat();
-                        let mask = cv.Mat.zeros(gray.rows, gray.cols, cv.CV_8UC1);
-                        cv.drawContours(mask, contours, i, new cv.Scalar(255), -1);
-                        cv.bitwise_and(gray, mask, fillMask);
-                        let filledPixels = cv.countNonZero(fillMask);
-                        let fillRatio = filledPixels / area;
-
-                        ctxResultado.beginPath();
-                        ctxResultado.arc(cx, cy, 10, 0, 2 * Math.PI);
-                        ctxResultado.strokeStyle = fillRatio > 0.5 ? 'green' : 'red';
-                        ctxResultado.lineWidth = 3;
-                        ctxResultado.stroke();
-
-                        if (fillRatio > 0.5) {
-                            acertos++;
-                        } else {
-                            erros++;
-                        }
-
-                        fillMask.delete();
-                        mask.delete();
-                    }
-                    cnt.delete();
-                }
-
-                src.delete();
-                gray.delete();
-                contours.delete();
-                hierarchy.delete();
-
-                document.getElementById('resultadoTexto').innerText = `Acertos: ${acertos} | Erros: ${erros}`;
-            };
-        }
-
         document.getElementById('captureGabarito').addEventListener('click', () => {
+            isCapturingGabarito = true;
             let imgData = captureImage(video);
             alert('Gabarito capturado com sucesso! Agora capture o cartão do aluno.');
             document.getElementById('step1').classList.add('hidden');
@@ -229,11 +178,11 @@
         });
 
         document.getElementById('captureResposta').addEventListener('click', () => {
+            isCapturingGabarito = false;
             let imgData = captureImage(video2);
             alert('Resposta capturada com sucesso! Processando...');
             document.getElementById('step2').classList.add('hidden');
             document.getElementById('result').classList.remove('hidden');
-            startCamera(video2, false);
             processarImagemResposta(imgData);
         });
 
