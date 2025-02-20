@@ -27,11 +27,12 @@
     </style>
 </head>
 <body>
-    <h1>Correção de Cartão-Resposta</h1>
+    <h2>Correção de Cartão-Resposta</h2>
 
     <div id="step1">
-        <h2>Passo 1: Capture o Cartão Gabarito</h2>
+        <h3>Passo 1: Capture o Cartão Gabarito</h3>
         <video id="video" autoplay playsinline></video>
+        <canvas id="overlayCanvas"></canvas>
         <button id="captureGabarito">Capturar Gabarito</button>
     </div>
 
@@ -58,12 +59,15 @@
         let video2 = document.getElementById('video2');
         let canvas = document.getElementById('canvas');
         let canvasResultado = document.getElementById('canvasResultado');
+        let overlayCanvas = document.getElementById('overlayCanvas');
         let ctx = canvas.getContext('2d');
         let ctxResultado = canvasResultado.getContext('2d');
+        let ctxOverlay = overlayCanvas.getContext('2d');
 
         function onOpenCvReady() {
             console.log("OpenCV.js carregado com sucesso.");
             startCamera(video);
+            requestAnimationFrame(detectarMarcasAoVivo);
         }
 
         if (typeof cv !== 'undefined') {
@@ -83,72 +87,53 @@
                 });
         }
 
+        function detectarMarcasAoVivo() {
+            overlayCanvas.width = video.videoWidth;
+            overlayCanvas.height = video.videoHeight;
+            ctxOverlay.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+
+            if (video.videoWidth > 0 && video.videoHeight > 0) {
+                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                let src = cv.imread(canvas);
+                let gray = new cv.Mat();
+                cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
+                cv.GaussianBlur(gray, gray, new cv.Size(5, 5), 0);
+                cv.threshold(gray, gray, 50, 255, cv.THRESH_BINARY);
+
+                let contours = new cv.MatVector();
+                let hierarchy = new cv.Mat();
+                cv.findContours(gray, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
+
+                for (let i = 0; i < contours.size(); i++) {
+                    let cnt = contours.get(i);
+                    let rect = cv.boundingRect(cnt);
+                    let area = rect.width * rect.height;
+
+                    if (area > 300 && Math.abs(rect.width - rect.height) < 20) {
+                        let cx = rect.x + rect.width / 2;
+                        let cy = rect.y + rect.height / 2;
+                        ctxOverlay.beginPath();
+                        ctxOverlay.arc(cx, cy, 10, 0, 2 * Math.PI);
+                        ctxOverlay.strokeStyle = 'lime';
+                        ctxOverlay.lineWidth = 3;
+                        ctxOverlay.stroke();
+                    }
+                    cnt.delete();
+                }
+
+                src.delete();
+                gray.delete();
+                contours.delete();
+                hierarchy.delete();
+            }
+            requestAnimationFrame(detectarMarcasAoVivo);
+        }
+
         function captureImage(videoElement) {
             canvas.width = videoElement.videoWidth;
             canvas.height = videoElement.videoHeight;
             ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
             return canvas.toDataURL('image/png');
-        }
-
-        function detectarMarcasETransformar(src) {
-            let gray = new cv.Mat();
-            cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
-            cv.GaussianBlur(gray, gray, new cv.Size(5, 5), 0);
-            cv.threshold(gray, gray, 50, 255, cv.THRESH_BINARY);
-
-            let contours = new cv.MatVector();
-            let hierarchy = new cv.Mat();
-            cv.findContours(gray, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
-
-            let pontos = [];
-
-            for (let i = 0; i < contours.size(); i++) {
-                let cnt = contours.get(i);
-                let rect = cv.boundingRect(cnt);
-                let area = rect.width * rect.height;
-
-                if (area > 300 && Math.abs(rect.width - rect.height) < 20) {
-                    pontos.push({ x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 });
-                }
-                cnt.delete();
-            }
-
-            contours.delete();
-            hierarchy.delete();
-            gray.delete();
-
-            if (pontos.length < 4) {
-                alert("Não foi possível detectar todas as marcas de referência.");
-                return null;
-            }
-
-            pontos.sort((a, b) => a.y - b.y);
-            let top = pontos.slice(0, 2).sort((a, b) => a.x - b.x);
-            let bottom = pontos.slice(2, 4).sort((a, b) => a.x - b.x);
-
-            let srcTri = cv.matFromArray(4, 1, cv.CV_32FC2, [
-                top[0].x, top[0].y,
-                top[1].x, top[1].y,
-                bottom[1].x, bottom[1].y,
-                bottom[0].x, bottom[0].y
-            ]);
-
-            let dstTri = cv.matFromArray(4, 1, cv.CV_32FC2, [
-                0, 0,
-                canvas.width, 0,
-                canvas.width, canvas.height,
-                0, canvas.height
-            ]);
-
-            let M = cv.getPerspectiveTransform(srcTri, dstTri);
-            let dst = new cv.Mat();
-            cv.warpPerspective(src, dst, M, new cv.Size(canvas.width, canvas.height));
-
-            srcTri.delete();
-            dstTri.delete();
-            M.delete();
-
-            return dst;
         }
 
         function analisarImagem(imgData, callback, draw = false) {
@@ -157,26 +142,21 @@
             img.onload = () => {
                 try {
                     let src = cv.imread(img);
-                    let alinhado = detectarMarcasETransformar(src);
-                    if (!alinhado) return;
-
                     let gray = new cv.Mat();
-                    let thresh = new cv.Mat();
-
-                    cv.cvtColor(alinhado, gray, cv.COLOR_RGBA2GRAY);
-                    cv.adaptiveThreshold(gray, thresh, 255, cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY_INV, 11, 2);
+                    cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
+                    cv.adaptiveThreshold(gray, gray, 255, cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY_INV, 11, 2);
 
                     let contours = new cv.MatVector();
                     let hierarchy = new cv.Mat();
-                    cv.findContours(thresh, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
+                    cv.findContours(gray, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
 
                     let respostas = Array(20).fill('');
                     let alternativas = ['A', 'B', 'C', 'D', 'E'];
                     let respostasPorQuestao = Array.from({ length: 20 }, () => []);
 
                     if (draw) {
-                        canvasResultado.width = alinhado.cols;
-                        canvasResultado.height = alinhado.rows;
+                        canvasResultado.width = src.cols;
+                        canvasResultado.height = src.rows;
                         ctxResultado.drawImage(img, 0, 0, canvas.width, canvas.height);
                     }
 
@@ -188,8 +168,8 @@
                             let cx = rect.x + rect.width / 2;
                             let cy = rect.y + rect.height / 2;
 
-                            let questao = Math.floor(cy / (alinhado.rows / 20));
-                            let alternativaIndex = Math.floor(cx / (alinhado.cols / 5));
+                            let questao = Math.floor(cy / (src.rows / 20));
+                            let alternativaIndex = Math.floor(cx / (src.cols / 5));
 
                             if (questao >= 0 && questao < 20 && alternativaIndex >= 0 && alternativaIndex < 5) {
                                 let area = rect.width * rect.height;
@@ -223,9 +203,7 @@
                     });
 
                     src.delete();
-                    alinhado.delete();
                     gray.delete();
-                    thresh.delete();
                     contours.delete();
                     hierarchy.delete();
 
