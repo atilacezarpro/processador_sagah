@@ -93,6 +93,69 @@
             return canvas.toDataURL('image/png');
         }
 
+        // Função para encontrar as marcas de referência e aplicar transformação
+        function detectarMarcasETransformar(src) {
+            let gray = new cv.Mat();
+            cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
+            cv.threshold(gray, gray, 50, 255, cv.THRESH_BINARY);
+
+            let contours = new cv.MatVector();
+            let hierarchy = new cv.Mat();
+            cv.findContours(gray, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
+
+            let pontos = [];
+
+            for (let i = 0; i < contours.size(); i++) {
+                let cnt = contours.get(i);
+                let rect = cv.boundingRect(cnt);
+                let area = rect.width * rect.height;
+
+                // Assumimos que as marcas são quadradas e grandes
+                if (area > 500 && Math.abs(rect.width - rect.height) < 10) {
+                    pontos.push({ x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 });
+                }
+                cnt.delete();
+            }
+
+            contours.delete();
+            hierarchy.delete();
+            gray.delete();
+
+            if (pontos.length !== 4) {
+                alert("Não foi possível detectar todas as marcas de referência.");
+                return null;
+            }
+
+            // Ordenar pontos (top-left, top-right, bottom-right, bottom-left)
+            pontos.sort((a, b) => a.y - b.y);
+            let top = pontos.slice(0, 2).sort((a, b) => a.x - b.x);
+            let bottom = pontos.slice(2, 4).sort((a, b) => a.x - b.x);
+
+            let srcTri = cv.matFromArray(4, 1, cv.CV_32FC2, [
+                top[0].x, top[0].y,
+                top[1].x, top[1].y,
+                bottom[1].x, bottom[1].y,
+                bottom[0].x, bottom[0].y
+            ]);
+
+            let dstTri = cv.matFromArray(4, 1, cv.CV_32FC2, [
+                0, 0,
+                canvas.width, 0,
+                canvas.width, canvas.height,
+                0, canvas.height
+            ]);
+
+            let M = cv.getPerspectiveTransform(srcTri, dstTri);
+            let dst = new cv.Mat();
+            cv.warpPerspective(src, dst, M, new cv.Size(canvas.width, canvas.height));
+
+            srcTri.delete();
+            dstTri.delete();
+            M.delete();
+
+            return dst;
+        }
+
         // Analisar imagem usando OpenCV.js para detectar bolhas preenchidas
         function analisarImagem(imgData, callback, draw = false) {
             let img = new Image();
@@ -100,14 +163,15 @@
             img.onload = () => {
                 try {
                     let src = cv.imread(img);
+                    let alinhado = detectarMarcasETransformar(src);
+                    if (!alinhado) return;
+
                     let gray = new cv.Mat();
                     let thresh = new cv.Mat();
 
-                    // Conversão para escala de cinza e binarização adaptativa
-                    cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
+                    cv.cvtColor(alinhado, gray, cv.COLOR_RGBA2GRAY);
                     cv.adaptiveThreshold(gray, thresh, 255, cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY_INV, 11, 2);
 
-                    // Detecção de contornos
                     let contours = new cv.MatVector();
                     let hierarchy = new cv.Mat();
                     cv.findContours(thresh, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
@@ -116,10 +180,9 @@
                     let alternativas = ['A', 'B', 'C', 'D', 'E'];
                     let respostasPorQuestao = Array.from({ length: 20 }, () => []);
 
-                    // Preparar canvasResultado para desenhar
                     if (draw) {
-                        canvasResultado.width = canvas.width;
-                        canvasResultado.height = canvas.height;
+                        canvasResultado.width = alinhado.cols;
+                        canvasResultado.height = alinhado.rows;
                         ctxResultado.drawImage(img, 0, 0, canvas.width, canvas.height);
                     }
 
@@ -127,20 +190,17 @@
                         let cnt = contours.get(i);
                         let rect = cv.boundingRect(cnt);
 
-                        // Filtrar contornos pelo tamanho esperado das bolhas
                         if (rect.width > 15 && rect.width < 40 && rect.height > 15 && rect.height < 40) {
                             let cx = rect.x + rect.width / 2;
                             let cy = rect.y + rect.height / 2;
 
-                            // Determinar qual questão e alternativa com base na posição
-                            let questao = Math.floor((cy - 100) / 50);
-                            let alternativaIndex = Math.floor((cx - 50) / 50);
+                            let questao = Math.floor(cy / (alinhado.rows / 20));
+                            let alternativaIndex = Math.floor(cx / (alinhado.cols / 5));
 
                             if (questao >= 0 && questao < 20 && alternativaIndex >= 0 && alternativaIndex < 5) {
                                 let area = rect.width * rect.height;
                                 respostasPorQuestao[questao].push({ alternativa: alternativas[alternativaIndex], area, cx, cy });
 
-                                // Desenhar contorno
                                 if (draw) {
                                     ctxResultado.beginPath();
                                     ctxResultado.arc(cx, cy, rect.width / 2, 0, 2 * Math.PI);
@@ -153,13 +213,11 @@
                         cnt.delete();
                     }
 
-                    // Selecionar a bolha mais preenchida por questão
                     respostasPorQuestao.forEach((opcoes, idx) => {
                         if (opcoes.length > 0) {
                             opcoes.sort((a, b) => b.area - a.area);
                             respostas[idx] = opcoes[0].alternativa;
 
-                            // Marcar acertos e erros
                             if (draw) {
                                 ctxResultado.beginPath();
                                 ctxResultado.arc(opcoes[0].cx, opcoes[0].cy, 10, 0, 2 * Math.PI);
@@ -170,8 +228,8 @@
                         }
                     });
 
-                    // Limpeza
                     src.delete();
+                    alinhado.delete();
                     gray.delete();
                     thresh.delete();
                     contours.delete();
