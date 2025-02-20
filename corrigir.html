@@ -58,14 +58,14 @@
         let canvas = document.getElementById('canvas');
         let ctx = canvas.getContext('2d');
 
-        // Função para iniciar a câmera
+        // Função para iniciar a câmera traseira
         function startCamera(videoElement) {
-            navigator.mediaDevices.getUserMedia({ video: true })
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: { exact: "environment" } } })
                 .then(stream => {
                     videoElement.srcObject = stream;
                 })
                 .catch(err => {
-                    console.error("Erro ao acessar a câmera: ", err);
+                    console.error("Erro ao acessar a câmera traseira: ", err);
                 });
         }
 
@@ -129,7 +129,7 @@
             };
         }
 
-        // Iniciar câmera para gabarito
+        // Iniciar câmera traseira para gabarito
         startCamera(video);
 
         document.getElementById('captureGabarito').addEventListener('click', () => {
