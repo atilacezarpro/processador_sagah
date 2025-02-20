@@ -118,7 +118,7 @@
                 let gray = new cv.Mat();
                 cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
                 cv.GaussianBlur(gray, gray, new cv.Size(5, 5), 0);
-                cv.threshold(gray, gray, 50, 255, cv.THRESH_BINARY);
+                cv.adaptiveThreshold(gray, gray, 255, cv.ADAPTIVE_THRESH_MEAN_C, cv.THRESH_BINARY_INV, 11, 2);
 
                 let contours = new cv.MatVector();
                 let hierarchy = new cv.Mat();
@@ -129,7 +129,7 @@
                     let rect = cv.boundingRect(cnt);
                     let area = rect.width * rect.height;
 
-                    if (area > 500 && area < 5000 && Math.abs(rect.width - rect.height) < 10) {
+                    if (area > 1000 && area < 10000 && Math.abs(rect.width - rect.height) < 10) {
                         let cx = rect.x + rect.width / 2;
                         let cy = rect.y + rect.height / 2;
                         ctxOverlay.beginPath();
@@ -168,7 +168,7 @@
                 let gray = new cv.Mat();
                 cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
                 cv.GaussianBlur(gray, gray, new cv.Size(5, 5), 0);
-                cv.threshold(gray, gray, 50, 255, cv.THRESH_BINARY);
+                cv.adaptiveThreshold(gray, gray, 255, cv.ADAPTIVE_THRESH_MEAN_C, cv.THRESH_BINARY_INV, 11, 2);
 
                 let contours = new cv.MatVector();
                 let hierarchy = new cv.Mat();
@@ -182,23 +182,31 @@
                     let rect = cv.boundingRect(cnt);
                     let area = rect.width * rect.height;
 
-                    if (area > 500 && area < 5000 && Math.abs(rect.width - rect.height) < 10) {
+                    if (area > 1000 && area < 10000 && Math.abs(rect.width - rect.height) < 10) {
                         let cx = rect.x + rect.width / 2;
                         let cy = rect.y + rect.height / 2;
 
-                        let isCorrect = Math.random() > 0.5;
+                        let fillMask = new cv.Mat();
+                        let mask = cv.Mat.zeros(gray.rows, gray.cols, cv.CV_8UC1);
+                        cv.drawContours(mask, contours, i, new cv.Scalar(255), -1);
+                        cv.bitwise_and(gray, mask, fillMask);
+                        let filledPixels = cv.countNonZero(fillMask);
+                        let fillRatio = filledPixels / area;
 
                         ctxResultado.beginPath();
                         ctxResultado.arc(cx, cy, 10, 0, 2 * Math.PI);
-                        ctxResultado.strokeStyle = isCorrect ? 'green' : 'red';
+                        ctxResultado.strokeStyle = fillRatio > 0.5 ? 'green' : 'red';
                         ctxResultado.lineWidth = 3;
                         ctxResultado.stroke();
 
-                        if (isCorrect) {
+                        if (fillRatio > 0.5) {
                             acertos++;
                         } else {
                             erros++;
                         }
+
+                        fillMask.delete();
+                        mask.delete();
                     }
                     cnt.delete();
                 }
