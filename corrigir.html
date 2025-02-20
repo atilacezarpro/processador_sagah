@@ -18,21 +18,31 @@
             margin: 10px;
             font-size: 16px;
         }
+        #videoContainer {
+            position: relative;
+            display: inline-block;
+        }
         video, canvas {
             width: 100%;
             max-width: 800px;
-            margin: 10px auto;
             border: 1px solid #ccc;
+        }
+        #overlayCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
         }
     </style>
 </head>
 <body>
-    <h2>Correção de Cartão-Resposta</h2>
+    <h1>Correção de Cartão-Resposta</h1>
 
     <div id="step1">
-        <h3>Passo 1: Capture o Cartão Gabarito</h3>
-        <video id="video" autoplay playsinline></video>
-        <canvas id="overlayCanvas"></canvas>
+        <h2>Passo 1: Capture o Cartão Gabarito</h2>
+        <div id="videoContainer">
+            <video id="video" autoplay playsinline></video>
+            <canvas id="overlayCanvas"></canvas>
+        </div>
         <button id="captureGabarito">Capturar Gabarito</button>
     </div>
 
@@ -109,7 +119,8 @@
                     let rect = cv.boundingRect(cnt);
                     let area = rect.width * rect.height;
 
-                    if (area > 300 && Math.abs(rect.width - rect.height) < 20) {
+                    // Filtrar marcas baseadas em tamanho e proporção
+                    if (area > 500 && area < 5000 && Math.abs(rect.width - rect.height) < 10) {
                         let cx = rect.x + rect.width / 2;
                         let cy = rect.y + rect.height / 2;
                         ctxOverlay.beginPath();
