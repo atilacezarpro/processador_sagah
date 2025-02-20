@@ -135,11 +135,9 @@
                     let area = rect.width * rect.height;
 
                     // Ajuste nos parâmetros para melhor detecção dos delimitadores
-                    if (area > 1500 && area < 20000 && Math.abs(rect.width - rect.height) < 20) {
-                        let cx = rect.x + rect.width / 2;
-                        let cy = rect.y + rect.height / 2;
+                    if (area > 3000 && area < 50000 && Math.abs(rect.width - rect.height) < 50) {
                         ctxOverlay.beginPath();
-                        ctxOverlay.arc(cx, cy, 15, 0, 2 * Math.PI);
+                        ctxOverlay.rect(rect.x, rect.y, rect.width, rect.height);
                         ctxOverlay.strokeStyle = 'red'; // Cor vermelha para destaque
                         ctxOverlay.lineWidth = 4;
                         ctxOverlay.stroke();
@@ -152,6 +150,10 @@
                     document.getElementById('marcadoresGabarito').innerText = `Marcadores detectados: ${marcadoresDetectados}`;
                 } else {
                     document.getElementById('marcadoresAluno').innerText = `Marcadores detectados: ${marcadoresDetectados}`;
+                }
+
+                if (marcadoresDetectados === 0) {
+                    console.warn("Nenhum marcador detectado. Ajuste o enquadramento ou iluminação.");
                 }
 
                 src.delete();
