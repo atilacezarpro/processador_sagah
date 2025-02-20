@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Correção de Cartão-Resposta</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 20px;
+        }
+        .hidden {
+            display: none;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 10px;
+            font-size: 16px;
+        }
+        input[type="file"] {
+            display: none;
+        }
+        label {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Correção de Cartão-Resposta</h1>
+    
+    <div id="step1">
+        <h2>Passo 1: Envie o Cartão Gabarito</h2>
+        <label for="gabaritoInput">Escolher Imagem do Gabarito</label>
+        <input type="file" id="gabaritoInput" accept="image/*">
+    </div>
+
+    <div id="step2" class="hidden">
+        <h2>Passo 2: Envie o Cartão do Aluno</h2>
+        <label for="respostaInput">Escolher Imagem do Cartão do Aluno</label>
+        <input type="file" id="respostaInput" accept="image/*">
+    </div>
+
+    <div id="result" class="hidden">
+        <h2>Resultado</h2>
+        <p id="resultadoTexto"></p>
+        <button id="corrigirOutro">Corrigir Outro Cartão</button>
+        <button id="reiniciar">Corrigir Outra Prova</button>
+    </div>
+
+    <script>
+        let gabarito = [];
+
+        document.getElementById('gabaritoInput').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                alert('Imagem do gabarito carregada. Agora envie o cartão do aluno.');
+                document.getElementById('step1').classList.add('hidden');
+                document.getElementById('step2').classList.remove('hidden');
+
+                // Aqui você pode implementar a lógica de leitura do cartão gabarito
+                // Por enquanto, vamos simular um gabarito
+                gabarito = Array.from({ length: 20 }, () => String.fromCharCode(65 + Math.floor(Math.random() * 5)));
+                console.log('Gabarito:', gabarito);
+            }
+        });
+
+        document.getElementById('respostaInput').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                // Aqui você pode implementar a lógica de leitura do cartão do aluno
+                // Vamos simular respostas aleatórias
+                const respostasAluno = Array.from({ length: 20 }, () => String.fromCharCode(65 + Math.floor(Math.random() * 5)));
+                console.log('Respostas do Aluno:', respostasAluno);
+
+                let acertos = 0;
+                let erros = 0;
+
+                for (let i = 0; i < 20; i++) {
+                    if (respostasAluno[i] === gabarito[i]) {
+                        acertos++;
+                    } else {
+                        erros++;
+                    }
+                }
+
+                document.getElementById('step2').classList.add('hidden');
+                document.getElementById('result').classList.remove('hidden');
+                document.getElementById('resultadoTexto').innerText = `Acertos: ${acertos}\nErros: ${erros}`;
+            }
+        });
+
+        document.getElementById('corrigirOutro').addEventListener('click', function() {
+            document.getElementById('result').classList.add('hidden');
+            document.getElementById('step2').classList.remove('hidden');
+        });
+
+        document.getElementById('reiniciar').addEventListener('click', function() {
+            document.getElementById('result').classList.add('hidden');
+            document.getElementById('step1').classList.remove('hidden');
+        });
+    </script>
+</body>
+</html>
