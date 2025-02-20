@@ -90,7 +90,7 @@
             navigator.mediaDevices.getUserMedia({
                 video: {
                     facingMode: { exact: "environment" },
-                    torch: enableFlash // Controla o flash
+                    torch: enableFlash
                 }
             })
             .then(stream => {
@@ -129,7 +129,6 @@
                     let rect = cv.boundingRect(cnt);
                     let area = rect.width * rect.height;
 
-                    // Filtrar marcas baseadas em tamanho e proporção
                     if (area > 500 && area < 5000 && Math.abs(rect.width - rect.height) < 10) {
                         let cx = rect.x + rect.width / 2;
                         let cy = rect.y + rect.height / 2;
@@ -187,7 +186,6 @@
                         let cx = rect.x + rect.width / 2;
                         let cy = rect.y + rect.height / 2;
 
-                        // Simulação de verificação de acerto
                         let isCorrect = Math.random() > 0.5;
 
                         ctxResultado.beginPath();
@@ -227,7 +225,7 @@
             alert('Resposta capturada com sucesso! Processando...');
             document.getElementById('step2').classList.add('hidden');
             document.getElementById('result').classList.remove('hidden');
-            startCamera(video2, false); // Desativa o flash durante o resultado
+            startCamera(video2, false);
             processarImagemResposta(imgData);
         });
 
