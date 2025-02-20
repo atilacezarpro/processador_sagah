@@ -134,13 +134,14 @@
                     let rect = cv.boundingRect(cnt);
                     let area = rect.width * rect.height;
 
-                    if (area > 1000 && area < 10000 && Math.abs(rect.width - rect.height) < 10) {
+                    // Ajuste nos parâmetros para melhor detecção dos delimitadores
+                    if (area > 1500 && area < 20000 && Math.abs(rect.width - rect.height) < 20) {
                         let cx = rect.x + rect.width / 2;
                         let cy = rect.y + rect.height / 2;
                         ctxOverlay.beginPath();
-                        ctxOverlay.arc(cx, cy, 10, 0, 2 * Math.PI);
-                        ctxOverlay.strokeStyle = 'lime';
-                        ctxOverlay.lineWidth = 3;
+                        ctxOverlay.arc(cx, cy, 15, 0, 2 * Math.PI);
+                        ctxOverlay.strokeStyle = 'red'; // Cor vermelha para destaque
+                        ctxOverlay.lineWidth = 4;
                         ctxOverlay.stroke();
                         marcadoresDetectados++;
                     }
