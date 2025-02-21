@@ -135,11 +135,11 @@
                     let rect = cv.boundingRect(cnt);
                     let area = rect.width * rect.height;
 
-                    // Ajuste para detectar grandes quadrados pretos nos cantos
-                    if (area > 5000 && area < 50000 && Math.abs(rect.width - rect.height) < 20) {
+                    // Melhor ajuste para detectar grandes quadrados pretos nos cantos
+                    if (area > 10000 && area < 100000 && Math.abs(rect.width - rect.height) < 10) {
                         ctxOverlay.beginPath();
                         ctxOverlay.rect(rect.x, rect.y, rect.width, rect.height);
-                        ctxOverlay.strokeStyle = 'red'; // Cor vermelha para destaque
+                        ctxOverlay.strokeStyle = 'lime'; // Cor verde para destaque
                         ctxOverlay.lineWidth = 5;
                         ctxOverlay.stroke();
                         marcadoresDetectados++;
