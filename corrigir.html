@@ -128,20 +128,22 @@
                 cv.findContours(gray, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
 
                 let marcadoresDetectados = 0;
+                let pontos = [];
 
                 for (let i = 0; i < contours.size(); i++) {
                     let cnt = contours.get(i);
                     let rect = cv.boundingRect(cnt);
                     let area = rect.width * rect.height;
 
-                    // Ajuste nos parâmetros para melhor detecção dos delimitadores
-                    if (area > 3000 && area < 50000 && Math.abs(rect.width - rect.height) < 50) {
+                    // Ajuste para detectar grandes quadrados pretos nos cantos
+                    if (area > 5000 && area < 50000 && Math.abs(rect.width - rect.height) < 20) {
                         ctxOverlay.beginPath();
                         ctxOverlay.rect(rect.x, rect.y, rect.width, rect.height);
                         ctxOverlay.strokeStyle = 'red'; // Cor vermelha para destaque
-                        ctxOverlay.lineWidth = 4;
+                        ctxOverlay.lineWidth = 5;
                         ctxOverlay.stroke();
                         marcadoresDetectados++;
+                        pontos.push({ x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 });
                     }
                     cnt.delete();
                 }
@@ -152,8 +154,9 @@
                     document.getElementById('marcadoresAluno').innerText = `Marcadores detectados: ${marcadoresDetectados}`;
                 }
 
-                if (marcadoresDetectados === 0) {
-                    console.warn("Nenhum marcador detectado. Ajuste o enquadramento ou iluminação.");
+                // Verificar se exatamente quatro marcadores foram detectados
+                if (marcadoresDetectados !== 4) {
+                    console.warn("Os quatro marcadores não foram detectados. Ajuste o enquadramento.");
                 }
 
                 src.delete();
