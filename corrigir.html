@@ -123,6 +123,8 @@
                 cv.findContours(gray, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
 
                 let marcadoresDetectados = 0;
+                let quadrados = [];
+
                 for (let i = 0; i < contours.size(); i++) {
                     let cnt = contours.get(i);
                     let peri = cv.arcLength(cnt, true);
@@ -134,6 +136,7 @@
                         let area = rect.width * rect.height;
 
                         if (area > 10000 && area < 100000) {
+                            quadrados.push(rect);
                             ctxOverlay.beginPath();
                             ctxOverlay.rect(rect.x, rect.y, rect.width, rect.height);
                             ctxOverlay.strokeStyle = 'lime';
@@ -144,6 +147,12 @@
                     }
                     approx.delete();
                     cnt.delete();
+                }
+
+                if (marcadoresDetectados === 4) {
+                    console.log("Quatro marcadores detectados.");
+                } else {
+                    console.warn("Não foi possível detectar os quatro marcadores. Ajuste o enquadramento.");
                 }
 
                 if (isCapturingGabarito) {
