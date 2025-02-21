@@ -116,7 +116,7 @@
                 let gray = new cv.Mat();
                 cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
                 cv.GaussianBlur(gray, gray, new cv.Size(5, 5), 0);
-                cv.Canny(gray, gray, 50, 150);
+                cv.Canny(gray, gray, 30, 100); // Sensibilidade ajustada
 
                 let contours = new cv.MatVector();
                 let hierarchy = new cv.Mat();
@@ -134,8 +134,9 @@
                     if (approx.rows === 4) {
                         let rect = cv.boundingRect(approx);
                         let area = rect.width * rect.height;
+                        let aspectRatio = rect.width / rect.height;
 
-                        if (area > 10000 && area < 100000) {
+                        if (area > 5000 && area < 150000 && aspectRatio > 0.8 && aspectRatio < 1.2) {
                             quadrados.push(rect);
                             ctxOverlay.beginPath();
                             ctxOverlay.rect(rect.x, rect.y, rect.width, rect.height);
