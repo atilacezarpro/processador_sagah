@@ -98,11 +98,6 @@
             })
             .then(stream => {
                 videoElement.srcObject = stream;
-                const track = stream.getVideoTracks()[0];
-                const imageCapture = new ImageCapture(track);
-                imageCapture.getPhotoCapabilities().then(() => {
-                    track.applyConstraints({ advanced: [{ torch: enableFlash }] });
-                });
             })
             .catch(err => {
                 console.error("Erro ao acessar a câmera traseira: ", err);
@@ -121,30 +116,33 @@
                 let gray = new cv.Mat();
                 cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
                 cv.GaussianBlur(gray, gray, new cv.Size(5, 5), 0);
-                cv.adaptiveThreshold(gray, gray, 255, cv.ADAPTIVE_THRESH_MEAN_C, cv.THRESH_BINARY_INV, 11, 2);
+                cv.Canny(gray, gray, 50, 150);
 
                 let contours = new cv.MatVector();
                 let hierarchy = new cv.Mat();
                 cv.findContours(gray, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
 
                 let marcadoresDetectados = 0;
-                let pontos = [];
-
                 for (let i = 0; i < contours.size(); i++) {
                     let cnt = contours.get(i);
-                    let rect = cv.boundingRect(cnt);
-                    let area = rect.width * rect.height;
+                    let peri = cv.arcLength(cnt, true);
+                    let approx = new cv.Mat();
+                    cv.approxPolyDP(cnt, approx, 0.02 * peri, true);
 
-                    // Melhor ajuste para detectar grandes quadrados pretos nos cantos
-                    if (area > 10000 && area < 100000 && Math.abs(rect.width - rect.height) < 10) {
-                        ctxOverlay.beginPath();
-                        ctxOverlay.rect(rect.x, rect.y, rect.width, rect.height);
-                        ctxOverlay.strokeStyle = 'lime'; // Cor verde para destaque
-                        ctxOverlay.lineWidth = 5;
-                        ctxOverlay.stroke();
-                        marcadoresDetectados++;
-                        pontos.push({ x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 });
+                    if (approx.rows === 4) {
+                        let rect = cv.boundingRect(approx);
+                        let area = rect.width * rect.height;
+
+                        if (area > 10000 && area < 100000) {
+                            ctxOverlay.beginPath();
+                            ctxOverlay.rect(rect.x, rect.y, rect.width, rect.height);
+                            ctxOverlay.strokeStyle = 'lime';
+                            ctxOverlay.lineWidth = 5;
+                            ctxOverlay.stroke();
+                            marcadoresDetectados++;
+                        }
                     }
+                    approx.delete();
                     cnt.delete();
                 }
 
@@ -152,11 +150,6 @@
                     document.getElementById('marcadoresGabarito').innerText = `Marcadores detectados: ${marcadoresDetectados}`;
                 } else {
                     document.getElementById('marcadoresAluno').innerText = `Marcadores detectados: ${marcadoresDetectados}`;
-                }
-
-                // Verificar se exatamente quatro marcadores foram detectados
-                if (marcadoresDetectados !== 4) {
-                    console.warn("Os quatro marcadores não foram detectados. Ajuste o enquadramento.");
                 }
 
                 src.delete();
@@ -185,7 +178,6 @@
                 ctxResultado.fillStyle = "blue";
                 ctxResultado.fillText("Processando...", 10, 30);
 
-                // Simulação de contagem de acertos e erros
                 let acertos = Math.floor(Math.random() * 21);
                 let erros = 20 - acertos;
 
